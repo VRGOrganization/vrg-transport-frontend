@@ -17,16 +17,21 @@
   --color-outline-variant: #c2c6d4;
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
+
+  /* Fontes no padrão v4 */
   --font-headline: 'Manrope', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-label: 'Inter', sans-serif;
+
+  /* Spacing extra para o header */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+
+  --color-tertiary: #08417e;
+  --color-tertiary-container: #2c5997;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* NÃO coloque * { margin: 0; padding: 0 } — o Tailwind Preflight já faz isso corretamente */
 
 body {
   background: var(--color-surface);
@@ -47,4 +52,12 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #f8f9fa;
   background-image: radial-gradient(at 0% 0%, #d7e2ff 0px, transparent 50%),
                     radial-gradient(at 100% 100%, #ffdbcd 0px, transparent 50%);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.text-primary-fixed-dim {
+  color: var(--color-primary-fixed-dim);
 }

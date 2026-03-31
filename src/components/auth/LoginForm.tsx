@@ -9,6 +9,7 @@ import { Button } from "../ui/Button";
 export function LoginForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+ 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -45,15 +46,11 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setLoading(true);
-    
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Login attempt:", formData);
-      router.push("/dashboard/student");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
       setErrors({ ...errors, password: "Credenciais inválidas" });
@@ -63,34 +60,28 @@ export function LoginForm() {
   };
 
   return (
-    <>
-      <div className="mb-10">
-        <h3 className="font-headline text-2xl font-bold text-on-surface mb-2">
-          Bem-vindo de volta
-        </h3>
-        <p className="text-on-surface-variant">
-          Acesse o portal de transporte institucional
-        </p>
-      </div>
+    <div className="space-y-6">
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+
+      {/* Formulário */}
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
             Email Institucional
           </label>
           <Input
             type="email"
-            icon="mail"
+            icon="alternate_email"
             placeholder="nome@instituicao.edu.br"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             error={errors.email}
           />
         </div>
-        
+
         <div className="space-y-2">
-          <div className="flex justify-between items-center px-1">
-            <label className="font-label text-sm font-medium text-on-surface-variant">
+          <div className="flex justify-between items-center ml-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Senha
             </label>
             <Link
@@ -109,20 +100,7 @@ export function LoginForm() {
             error={errors.password}
           />
         </div>
-        
-        <div className="flex items-center gap-3 pt-2">
-          <input
-            type="checkbox"
-            id="remember"
-            className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary bg-surface-container-low"
-            checked={formData.remember}
-            onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
-          />
-          <label htmlFor="remember" className="text-sm text-on-surface-variant select-none">
-            Lembrar acesso neste dispositivo
-          </label>
-        </div>
-        
+
         <Button
           type="submit"
           variant="secondary"
@@ -130,20 +108,32 @@ export function LoginForm() {
           fullWidth
           loading={loading}
           icon="arrow_forward"
-          className="mt-4"
         >
           Entrar no Sistema
         </Button>
       </form>
-      
-      <div className="mt-10 pt-8 border-t border-surface-container-high text-center">
+
+      {/* Link de registro */}
+      <div className="text-center pt-2">
         <p className="text-on-surface-variant text-sm">
-          Ainda não tem acesso?
-          <Link href="/register" className="text-primary font-bold hover:underline ml-1">
+          Ainda não possui acesso?{" "}
+          <Link href="/register" className="text-primary font-bold hover:underline">
             Registrar-se
           </Link>
         </p>
       </div>
-    </>
+
+      {/* Cards de suporte e rotas */}
+      <div className="mt-8 grid grid-cols-2 gap-4">
+        <div className="bg-surface-container-low p-4 rounded-2xl flex flex-col gap-3">
+          <span className="material-symbols-outlined text-primary text-2xl">help_outline</span>
+          <span className="text-xs font-bold leading-tight text-on-surface">Suporte ao Usuário</span>
+        </div>
+        <div className="bg-primary/5 p-4 rounded-2xl flex flex-col gap-3 border border-primary/10">
+          <span className="material-symbols-outlined text-primary text-2xl">map</span>
+          <span className="text-xs font-bold leading-tight text-on-surface">Ver Rotas Ativas</span>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -31,9 +31,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: "px-4 py-2 text-sm",
-      md: "px-6 py-3 text-base",
-      lg: "px-8 py-4 text-lg",
+      sm: "px-6 py-2.5 text-sm",
+      md: "px-8 py-3 text-base",
+      lg: "px-10 py-4 text-lg h-14", // Altura fixa de 56px
     };
 
     return (
@@ -67,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
-        {icon && <span className="material-symbols-outlined text-xl">{icon}</span>}
+        {icon && <span className="material-symbols-outlined text-2xl">{icon}</span>}
         {children}
       </button>
     );

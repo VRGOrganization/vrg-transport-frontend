@@ -77,85 +77,65 @@ export function RegisterForm() {
 
   return (
     <>
-      <div className="mb-10">
-        <h3 className="font-headline text-2xl font-bold text-on-surface mb-2">
+      <div className="mb-6">
+        <h3 className="font-headline text-xl md:text-2xl font-bold text-on-surface mb-2">
           Criar nova conta
         </h3>
-        <p className="text-on-surface-variant">
+        <p className="text-on-surface-variant text-sm">
           Preencha os dados abaixo para se cadastrar
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
-            Nome Completo
-          </label>
-          <Input
-            type="text"
-            icon="person"
-            placeholder="Seu nome completo"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            error={errors.name}
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Nome Completo"
+          type="text"
+          icon="person"
+          placeholder="Seu nome completo"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          error={errors.name}
+        />
         
-        <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
-            Email Institucional
-          </label>
-          <Input
-            type="email"
-            icon="mail"
-            placeholder="nome@instituicao.edu.br"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            error={errors.email}
-          />
-        </div>
+        <Input
+          label="Email Institucional"
+          type="email"
+          icon="mail"
+          placeholder="nome@instituicao.edu.br"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          error={errors.email}
+        />
         
-        <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
-            Número de Matrícula
-          </label>
-          <Input
-            type="text"
-            icon="badge"
-            placeholder="2024001234"
-            value={formData.registrationNumber}
-            onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
-            error={errors.registrationNumber}
-          />
-        </div>
+        <Input
+          label="Número de Matrícula"
+          type="text"
+          icon="badge"
+          placeholder="2024001234"
+          value={formData.registrationNumber}
+          onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+          error={errors.registrationNumber}
+        />
         
-        <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
-            Senha
-          </label>
-          <Input
-            type="password"
-            icon="lock"
-            placeholder="Crie uma senha forte"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            error={errors.password}
-          />
-        </div>
+        <Input
+          label="Senha"
+          type="password"
+          icon="lock"
+          placeholder="Crie uma senha forte"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          error={errors.password}
+        />
         
-        <div className="space-y-2">
-          <label className="font-label text-sm font-medium text-on-surface-variant ml-1">
-            Confirmar Senha
-          </label>
-          <Input
-            type="password"
-            icon="lock"
-            placeholder="Digite a senha novamente"
-            value={formData.confirmPassword}
-            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            error={errors.confirmPassword}
-          />
-        </div>
+        <Input
+          label="Confirmar Senha"
+          type="password"
+          icon="lock"
+          placeholder="Digite a senha novamente"
+          value={formData.confirmPassword}
+          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+          error={errors.confirmPassword}
+        />
         
         <Button
           type="submit"
@@ -170,7 +150,7 @@ export function RegisterForm() {
         </Button>
       </form>
       
-      <div className="mt-10 pt-8 border-t border-surface-container-high text-center">
+      <div className="mt-8 pt-6 border-t border-surface-container-high text-center">
         <p className="text-on-surface-variant text-sm">
           Já possui uma conta?
           <Link href="/login" className="text-primary font-bold hover:underline ml-1">

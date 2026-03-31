@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
-import { Footer } from "@/components/layout/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,11 +32,10 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} antialiased min-h-screen flex flex-col`}
+        className={`${inter.variable} ${manrope.variable} antialiased`}
         suppressHydrationWarning
       >
         {children}
-        <Footer />
       </body>
     </html>
   );
