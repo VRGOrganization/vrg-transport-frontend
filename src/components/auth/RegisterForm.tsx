@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
+import { useAuth } from "@/hooks/useAuth";
 
 export function RegisterForm() {
   const router = useRouter();
+  const { register } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    telephone: "",
     password: "",
     confirmPassword: "",
-    registrationNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -35,21 +37,24 @@ export function RegisterForm() {
       isValid = false;
     }
 
+    if (!formData.telephone) {
+      newErrors.telephone = "Telefone é obrigatório";
+      isValid = false;
+    }
+
     if (!formData.password) {
       newErrors.password = "Senha é obrigatória";
       isValid = false;
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Senha deve ter no mínimo 6 caracteres";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Senha deve ter no mínimo 8 caracteres";
+      isValid = false;
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = "Senha deve ter maiúscula, minúscula e número";
       isValid = false;
     }
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "As senhas não coincidem";
-      isValid = false;
-    }
-
-    if (!formData.registrationNumber) {
-      newErrors.registrationNumber = "Matrícula é obrigatória";
       isValid = false;
     }
 
@@ -59,17 +64,21 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setLoading(true);
-    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Register attempt:", formData);
-      router.push("/login?registered=true");
-    } catch (error) {
-      console.error("Register error:", error);
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        telephone: formData.telephone,
+        password: formData.password,
+      });
+
+      if (result.success) {
+        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      } else {
+        setErrors((prev) => ({ ...prev, general: result.error ?? "Erro ao criar conta" }));
+      }
     } finally {
       setLoading(false);
     }
@@ -86,6 +95,12 @@ export function RegisterForm() {
         </p>
       </div>
 
+      {errors.general && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+          {errors.general}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Nome Completo"
@@ -96,37 +111,37 @@ export function RegisterForm() {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           error={errors.name}
         />
-        
+
         <Input
-          label="Email Institucional"
+          label="Email"
           type="email"
           icon="mail"
-          placeholder="nome@instituicao.edu.br"
+          placeholder="nome@email.com"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           error={errors.email}
         />
-        
+
         <Input
-          label="Número de Matrícula"
-          type="text"
-          icon="badge"
-          placeholder="2024001234"
-          value={formData.registrationNumber}
-          onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
-          error={errors.registrationNumber}
+          label="Telefone"
+          type="tel"
+          icon="phone"
+          placeholder="(22) 99999-9999"
+          value={formData.telephone}
+          onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+          error={errors.telephone}
         />
-        
+
         <Input
           label="Senha"
           type="password"
           icon="lock"
-          placeholder="Crie uma senha forte"
+          placeholder="Mín. 8 caracteres, maiúscula e número"
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           error={errors.password}
         />
-        
+
         <Input
           label="Confirmar Senha"
           type="password"
@@ -136,7 +151,7 @@ export function RegisterForm() {
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
           error={errors.confirmPassword}
         />
-        
+
         <Button
           type="submit"
           variant="primary"
@@ -149,7 +164,7 @@ export function RegisterForm() {
           Criar Conta
         </Button>
       </form>
-      
+
       <div className="mt-8 pt-6 border-t border-surface-container-high text-center">
         <p className="text-on-surface-variant text-sm">
           Já possui uma conta?

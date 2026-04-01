@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const actions = [
   {
@@ -56,11 +58,15 @@ const actions = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user, loading, logout } = useAuth();
 
-  const handleLogout = () => {
-    // Aqui remover token quando backend estiver integrado
-    router.push("/login");
-  };
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) return null;
 
   return (
     <>
@@ -91,7 +97,7 @@ export default function DashboardPage() {
         </h1>
 
         <button
-          onClick={handleLogout}
+          onClick={logout}
           className="rounded-full overflow-hidden border-2 border-primary/10 hover:border-primary/30 transition-all active:scale-95"
           style={{ width: "40px", height: "40px" }}
           title="Sair"
