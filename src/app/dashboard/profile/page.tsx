@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { api } from "@/lib/api";
 
 const SHIFT_OPTIONS = [
@@ -92,20 +93,21 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm flex items-center gap-3 px-4 h-16">
+      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md shadow-sm flex items-center gap-3 px-4 h-16">
         <button
           onClick={() => router.back()}
           className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
         >
           <span className="material-symbols-outlined text-on-surface">arrow_back</span>
         </button>
-        <h1 className="font-headline font-bold text-on-surface text-lg">Meu Perfil</h1>
+        <h1 className="font-headline font-bold text-on-surface text-lg flex-1">Meu Perfil</h1>
+        <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
       </header>
 
       <main className="pt-20 pb-10 px-5 max-w-lg mx-auto">
         {/* Info do usuário */}
         <div className="bg-primary rounded-2xl p-5 mb-6 flex items-center gap-4">
-          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-white text-3xl">person</span>
           </div>
           <div>
@@ -116,13 +118,13 @@ export default function ProfilePage() {
 
         {/* Feedback */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
+          <div className="bg-success-container border border-success-border text-on-success text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
             <span className="material-symbols-outlined text-base">check_circle</span>
             Perfil atualizado com sucesso!
           </div>
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-5">
             {error}
           </div>
         )}

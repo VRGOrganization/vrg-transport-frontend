@@ -48,7 +48,7 @@ function VerifyEmailForm() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+        <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
           {error}
         </div>
       )}
@@ -82,9 +82,14 @@ function VerifyEmailForm() {
   );
 }
 
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+
 export default function VerifyEmailPage() {
   return (
-    <main className="flex-1 -mt-12 bg-surface rounded-t-[2.5rem] relative z-20 px-6 pt-8 pb-12 shadow-[0_-12px_40px_rgba(0,63,135,0.08)]">
+    <main className="flex-1 -mt-12 bg-surface rounded-t-[2.5rem] relative z-20 px-6 pt-8 pb-12 shadow-[0_-12px_40px_var(--shadow-primary-soft)]">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
+      </div>
       <div className="max-w-md mx-auto">
         <Suspense>
           <VerifyEmailForm />
