@@ -189,15 +189,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <Input
-            label="Linha de Ônibus"
-            type="text"
-            icon="directions_bus"
-            placeholder="Ex: 05"
-            value={formData.bus}
-            onChange={(e) => setFormData({ ...formData, bus: e.target.value })}
-          />
-
           <Button
             type="submit"
             variant="primary"

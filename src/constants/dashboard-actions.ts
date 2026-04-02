@@ -13,18 +13,6 @@ export interface DashboardAction {
 
 export const DASHBOARD_ACTIONS: DashboardAction[] = [
   {
-    href: "/dashboard/documents",
-    title: "Envio de Documentos",
-    description: "Atualize sua documentação",
-    icon: "upload_file",
-    bg: "bg-secondary",
-    iconBg: "bg-black/10",
-    titleColor: "text-white",
-    descColor: "text-white/80",
-    iconColor: "text-white",
-    overlay: false,
-  },
-  {
     href: "/dashboard/card",
     title: "Visualização da carteirinha",
     description: "Sua carteira digital QR Code",

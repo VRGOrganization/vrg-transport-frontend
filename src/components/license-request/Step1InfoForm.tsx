@@ -103,16 +103,6 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
         </div>
       </div>
 
-      <Input
-        label="Linha de Ônibus"
-        type="text"
-        icon="directions_bus"
-        placeholder="Ex: 05"
-        value={data.bus}
-        onChange={(e) => set("bus", e.target.value)}
-        required
-      />
-
       <Button
         type="submit"
         variant="primary"
