@@ -22,7 +22,7 @@ export function useInstitutionAutocomplete(
 
   const handleInstitutionChange = useCallback((newInstitution: string) => {
     setInstitution(newInstitution);
-    setCourse(''); // Reset course when institution changes
+    setCourse(''); 
     const courses = getCoursesForInstitution(newInstitution);
     setCourseOptions(courses);
   }, []);
@@ -31,7 +31,7 @@ export function useInstitutionAutocomplete(
     setCourse(newCourse);
   }, []);
 
-  // Effect to load courses if initial institution is provided
+  
   useEffect(() => {
     if (initialInstitution) {
       const courses = getCoursesForInstitution(initialInstitution);

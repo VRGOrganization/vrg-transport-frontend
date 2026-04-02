@@ -26,6 +26,6 @@ export const LICENSE_DOCUMENTS: DocumentConfig[] = [
     label: "Grade Horária",
     description: "Comprovante de horário das aulas",
     icon: "calendar_month",
-    required: false,
+    required: true,
   },
 ];

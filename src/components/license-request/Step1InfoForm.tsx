@@ -1,4 +1,3 @@
-// components/license-request/Step1InfoForm.tsx
 "use client";
 
 import { useState } from "react";
