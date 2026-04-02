@@ -96,7 +96,7 @@ export function RegisterForm() {
       </div>
 
       {errors.general && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+        <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-4">
           {errors.general}
         </div>
       )}
