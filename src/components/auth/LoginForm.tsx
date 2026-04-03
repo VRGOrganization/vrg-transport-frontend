@@ -5,23 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
+import { useAuth } from "@/hooks/useAuth";
 
 export function LoginForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
- 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    remember: false,
-  });
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
 
   const validateForm = () => {
-    const newErrors = { email: "", password: "" };
+    const newErrors = { email: "", password: "", general: "" };
     let isValid = true;
 
     if (!formData.email) {
@@ -49,11 +43,12 @@ export function LoginForm() {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
-      setErrors({ ...errors, password: "Credenciais inválidas" });
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        router.push("/dashboard");
+      } else {
+        setErrors((prev) => ({ ...prev, general: result.error ?? "Credenciais inválidas" }));
+      }
     } finally {
       setLoading(false);
     }
@@ -61,18 +56,21 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
+      {errors.general && (
+        <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
+          {errors.general}
+        </div>
+      )}
 
-
-      {/* Formulário */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-            Email Institucional
+            Email
           </label>
           <Input
             type="email"
             icon="alternate_email"
-            placeholder="nome@instituicao.edu.br"
+            placeholder="nome@email.com"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             error={errors.email}
@@ -80,17 +78,9 @@ export function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between items-center ml-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              Senha
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Esqueceu a senha?
-            </Link>
-          </div>
+          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+            Senha
+          </label>
           <Input
             type="password"
             icon="lock"
@@ -113,7 +103,6 @@ export function LoginForm() {
         </Button>
       </form>
 
-      {/* Link de registro */}
       <div className="text-center pt-2">
         <p className="text-on-surface-variant text-sm">
           Ainda não possui acesso?{" "}
@@ -123,7 +112,6 @@ export function LoginForm() {
         </p>
       </div>
 
-      {/* Cards de suporte e rotas */}
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="bg-surface-container-low p-4 rounded-2xl flex flex-col gap-3">
           <span className="material-symbols-outlined text-primary text-2xl">help_outline</span>

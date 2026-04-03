@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { api, setTokens, clearTokens } from "@/lib/api";
 
 interface User {
   id: string;
@@ -16,23 +17,14 @@ export function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar token no localStorage/sessionStorage
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          // Aqui será integrado com o backend real
-          // Por enquanto, mock
-          const mockUser = {
-            id: "1",
-            name: "Usuário Teste",
-            email: "teste@instituicao.edu.br",
-            role: "student" as const,
-          };
-          setUser(mockUser);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+        const data = await api.get<User>("/student/me");
+        setUser(data);
+      } catch {
+        clearTokens();
       } finally {
         setLoading(false);
       }
@@ -44,35 +36,69 @@ export function useAuth() {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Integração com backend será adicionada aqui
-      const mockUser = {
-        id: "1",
-        name: "Usuário Teste",
-        email,
-        role: "student" as const,
-      };
-      localStorage.setItem("auth_token", "mock_token");
-      setUser(mockUser);
+      const data = await api.post<{
+        access_token: string;
+        refresh_token: string;
+        user: { id: string; role: string; identifier: string };
+      }>("/auth/student/login", { email, password });
+
+      setTokens(data.access_token, data.refresh_token);
+
+      const me = await api.get<User>("/student/me");
+      setUser(me);
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Falha na autenticação" };
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return { success: false, error: error?.message ?? "Credenciais inválidas" };
     } finally {
       setLoading(false);
+    }
+  };
+
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    telephone: string;
+  }) => {
+    try {
+      await api.post("/auth/student/register", data);
+      return { success: true };
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return { success: false, error: error?.message ?? "Erro ao criar conta" };
+    }
+  };
+
+  const verifyEmail = async (email: string, code: string) => {
+    try {
+      const data = await api.post<{
+        access_token: string;
+        refresh_token: string;
+      }>("/auth/student/verify", { email, code });
+
+      setTokens(data.access_token, data.refresh_token);
+
+      const me = await api.get<User>("/student/me");
+      setUser(me);
+      return { success: true };
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return { success: false, error: error?.message ?? "Código inválido" };
     }
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
-      localStorage.removeItem("auth_token");
+      await api.post("/auth/logout", {});
+    } catch {
+      // ignora erro de logout
+    } finally {
+      clearTokens();
       setUser(null);
       router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  return { user, loading, login, logout };
+  return { user, loading, login, register, verifyEmail, logout };
 }

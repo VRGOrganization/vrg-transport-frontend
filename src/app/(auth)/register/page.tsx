@@ -1,8 +1,12 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function RegisterPage() {
   return (
     <main className="flex-grow flex items-center justify-center p-4 md:p-8 bg-mesh">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low bg-surface-container-lowest/80 backdrop-blur-sm rounded-full" />
+      </div>
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden bg-surface-container-lowest shadow-2xl rounded-xl">
         {/* Left Side: Brand Visuals & Info - Desktop only */}
         <div className="hidden lg:flex flex-col justify-between p-12 bg-primary relative overflow-hidden">
