@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { useInstitutionAutocomplete } from "@/hooks/useInstitutionAutocomplete";
 
@@ -48,7 +47,6 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
     const newData = { ...data, ...updates };
     onChange(newData);
     
-    // Limpa o erro do campo que está sendo atualizado
     const fieldName = Object.keys(updates)[0] as keyof Step1Data;
     if (errors[fieldName]) {
       setErrors(prev => ({ ...prev, [fieldName]: undefined }));
@@ -65,7 +63,6 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
     updateFormData({ degree: newCourse });
   };
 
-  // Função de validação
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof Step1Data, string>> = {};
     
@@ -87,7 +84,6 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
     
     setErrors(newErrors);
     
-    // Marca todos os campos como "tocados" para mostrar os erros
     const allTouched: Partial<Record<keyof Step1Data, boolean>> = {
       institution: true,
       degree: true,
@@ -105,7 +101,6 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
     }
   };
 
-  // Função para marcar campo como "tocado" quando o usuário interage
   const markAsTouched = (field: keyof Step1Data) => {
     if (!touched[field]) {
       setTouched(prev => ({ ...prev, [field]: true }));
@@ -120,10 +115,11 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           icon="school"
           placeholder="Digite o nome da faculdade"
           options={institutionOptions}
-          value={institution}
+          value={data.institution}
           onValueChange={onInstitutionChange}
           onBlur={() => markAsTouched("institution")}
-  
+          required
+          error={touched.institution ? errors.institution : undefined}
         />
       </div>
 
@@ -133,26 +129,30 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           icon="menu_book"
           placeholder="Digite o nome do curso"
           options={courseOptions}
-          value={course}
+          value={data.degree}
           onValueChange={onCourseChange}
-          disabled={!institution}
+          disabled={!data.institution}
           onBlur={() => markAsTouched("degree")}
-         
+          required
+          error={touched.degree ? errors.degree : undefined}
         />
       </div>
 
       {/* Turno - Select estilizado */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+        <label htmlFor="shift" className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
           Turno <span className="text-error">*</span>
         </label>
         <select
+          id="shift"
           value={data.shift}
           onChange={(e) => {
             updateFormData({ shift: e.target.value });
             markAsTouched("shift");
           }}
           onBlur={() => markAsTouched("shift")}
+          aria-required="true"
+          aria-invalid={touched.shift && !!errors.shift}
           className={`w-full h-12 px-4 rounded-xl text-sm font-medium bg-surface-container-low text-on-surface border transition-all outline-none
             ${touched.shift && errors.shift 
               ? "border-error focus:border-error focus:ring-error/20" 
@@ -167,22 +167,25 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           ))}
         </select>
         {touched.shift && errors.shift && (
-          <p className="text-xs text-error mt-1 ml-1">{errors.shift}</p>
+          <p className="text-xs text-error mt-1 ml-1" role="alert">{errors.shift}</p>
         )}
       </div>
 
       {/* Tipo Sanguíneo - Select estilizado */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+        <label htmlFor="bloodType" className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
           Tipo Sanguíneo <span className="text-error">*</span>
         </label>
         <select
+          id="bloodType"
           value={data.bloodType}
           onChange={(e) => {
             updateFormData({ bloodType: e.target.value });
             markAsTouched("bloodType");
           }}
           onBlur={() => markAsTouched("bloodType")}
+          aria-required="true"
+          aria-invalid={touched.bloodType && !!errors.bloodType}
           className={`w-full h-12 px-4 rounded-xl text-sm font-medium bg-surface-container-low text-on-surface border transition-all outline-none
             ${touched.bloodType && errors.bloodType 
               ? "border-error focus:border-error focus:ring-error/20" 
@@ -197,7 +200,7 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           ))}
         </select>
         {touched.bloodType && errors.bloodType && (
-          <p className="text-xs text-error mt-1 ml-1">{errors.bloodType}</p>
+          <p className="text-xs text-error mt-1 ml-1" role="alert">{errors.bloodType}</p>
         )}
       </div>
 
