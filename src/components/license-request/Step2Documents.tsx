@@ -11,13 +11,16 @@ interface Step2DocumentsProps {
   files: DocumentFiles;
   onChange: (files: DocumentFiles) => void;
   onBack: () => void;
-  onSubmit: () => void;
-  submitting: boolean;
+  onContinue: () => void;
 }
 
 // Componente de preview individual
-function DocumentPreview({ file, onRemove, docName }: { 
-  file: File; 
+function DocumentPreview({
+  file,
+  onRemove,
+  docName,
+}: {
+  file: File;
   onRemove: () => void;
   docName: string;
 }) {
@@ -25,7 +28,7 @@ function DocumentPreview({ file, onRemove, docName }: {
   const [isImage, setIsImage] = useState(false);
 
   useEffect(() => {
-    if (file.type.startsWith('image/')) {
+    if (file.type.startsWith("image/")) {
       setIsImage(true);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -37,9 +40,9 @@ function DocumentPreview({ file, onRemove, docName }: {
   }, [file]);
 
   const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   return (
@@ -47,25 +50,25 @@ function DocumentPreview({ file, onRemove, docName }: {
       <div className="bg-surface-container rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-all">
         <div className="relative aspect-video bg-surface-container-high flex items-center justify-center">
           {isImage && previewUrl ? (
-            <img 
-              src={previewUrl} 
+            <img
+              src={previewUrl}
               alt={`Preview ${docName}`}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="text-center">
               <p className="text-on-surface-variant text-sm capitalize">
-                {file.type.split('/').pop() || 'documento'}
+                {file.type.split("/").pop() || "documento"}
               </p>
             </div>
           )}
-          
+
           <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded px-2 py-1">
             <span className="text-white text-xs font-medium uppercase">
-              {file.type.split('/').pop()?.split('.').pop() || 'arquivo'}
+              {file.type.split("/").pop()?.split(".").pop() || "arquivo"}
             </span>
           </div>
-          
+
           <button
             onClick={onRemove}
             className="absolute top-2 right-2 bg-error rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
@@ -76,11 +79,14 @@ function DocumentPreview({ file, onRemove, docName }: {
             </span>
           </button>
         </div>
-        
+
         <div className="p-3 bg-surface-container">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-on-surface truncate" title={file.name}>
+              <p
+                className="text-sm font-medium text-on-surface truncate"
+                title={file.name}
+              >
                 {file.name}
               </p>
               <p className="text-xs text-on-surface-variant mt-0.5">
@@ -89,7 +95,9 @@ function DocumentPreview({ file, onRemove, docName }: {
             </div>
             <div className="shrink-0">
               <span className="inline-flex items-center gap-1 text-xs text-success">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
+                <span className="material-symbols-outlined text-sm">
+                  check_circle
+                </span>
                 Enviado
               </span>
             </div>
@@ -101,12 +109,15 @@ function DocumentPreview({ file, onRemove, docName }: {
 }
 
 // Componente de preview em grid
-function DocumentsGrid({ files, onRemoveFile }: { 
-  files: DocumentFiles; 
+function DocumentsGrid({
+  files,
+  onRemoveFile,
+}: {
+  files: DocumentFiles;
   onRemoveFile: (docType: string) => void;
 }) {
   const uploadedDocs = Object.entries(files).filter(([, file]) => !!file);
-  
+
   if (uploadedDocs.length === 0) {
     return (
       <div className="text-center py-12 bg-surface-container-low rounded-lg border border-dashed border-outline-variant">
@@ -122,11 +133,13 @@ function DocumentsGrid({ files, onRemoveFile }: {
       </div>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
       {uploadedDocs.map(([docType, file]) => {
-        const docConfig = LICENSE_DOCUMENTS.find(d => d.photoType === docType);
+        const docConfig = LICENSE_DOCUMENTS.find(
+          (d) => d.photoType === docType,
+        );
         return (
           <DocumentPreview
             key={docType}
@@ -144,37 +157,28 @@ export default function Step2Documents({
   files,
   onChange,
   onBack,
-  onSubmit,
-  submitting,
+  onContinue,
 }: Step2DocumentsProps) {
-  const [showPreview, setShowPreview] = useState(true);
+    const [showPreview, setShowPreview] = useState(true);
 
   const setFile = (photoType: string, file: File | null) => {
     onChange({ ...files, [photoType]: file });
   };
 
   const removeFile = (docType: string) => {
-    // FIX: cria novo objeto com a chave explicitamente zerada para null,
-    // garantindo que o React detecte a mudança de referência e re-renderize.
     const newFiles = { ...files, [docType]: null };
     onChange(newFiles);
   };
 
-  // FIX 1 — usa Boolean (truthy) em vez de "!== null" para capturar
-  //          tanto null quanto undefined após remoção.
-  // FIX 2 — totalUploaded e o counter de obrigatórios usam a mesma
-  //          lógica, e o header agora exibe X/3 (apenas obrigatórios).
   const { requiredFilled, requiredFilledCount, missingRequired, totalUploaded, totalRequired } = useMemo(() => {
     const requiredDocuments = LICENSE_DOCUMENTS.filter((d) => d.required);
 
     const requiredFilledCount = requiredDocuments.filter(
-      (d) => Boolean(files[d.photoType])  // truthy: descarta null/undefined após remoção
+      (d) => Boolean(files[d.photoType])
     ).length;
 
     const requiredFilled = requiredFilledCount === requiredDocuments.length;
     const missingRequired = requiredDocuments.length - requiredFilledCount;
-
-    // Conta apenas arquivos realmente presentes (truthy)
     const totalUploaded = Object.values(files).filter(Boolean).length;
     const totalRequired = requiredDocuments.length;
 
@@ -182,14 +186,14 @@ export default function Step2Documents({
   }, [files]);
 
   const getButtonText = () => {
-    if (requiredFilled) return 'Finalizar pedido';
+    if (requiredFilled) return 'Continuar para Grade Horária';  // Mudado o texto
     if (missingRequired === 1) return `Falta 1 documento obrigatório`;
     return `Faltam ${missingRequired} documentos obrigatórios`;
   };
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho com progresso — FIX: exibe X/totalRequired (3/3) */}
+      {/* Cabeçalho com progresso */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-on-surface">
@@ -210,7 +214,7 @@ export default function Step2Documents({
         )}
       </div>
       
-      {/* Barra de progresso baseada nos obrigatórios */}
+      {/* Barra de progresso */}
       <div className="space-y-2">
         <div className="h-2 bg-surface-container-high rounded-full overflow-hidden">
           <div 
@@ -232,7 +236,7 @@ export default function Step2Documents({
         ))}
       </div>
 
-      {/* Grid de preview dos documentos */}
+      {/* Grid de preview */}
       {showPreview && (
         <DocumentsGrid files={files} onRemoveFile={removeFile} />
       )}
@@ -258,8 +262,7 @@ export default function Step2Documents({
           <button
             type="button"
             onClick={onBack}
-            disabled={submitting}
-            className="flex items-center gap-1 text-on-surface-variant font-semibold text-sm active:scale-95 transition-all disabled:opacity-50 px-4 py-2 rounded-lg hover:bg-surface-container-high"
+            className="flex items-center gap-1 text-on-surface-variant font-semibold text-sm active:scale-95 transition-all px-4 py-2 rounded-lg hover:bg-surface-container-high"
           >
             <span className="material-symbols-outlined text-lg">
               arrow_back
@@ -273,10 +276,9 @@ export default function Step2Documents({
               variant="primary"
               size="lg"
               fullWidth
-              loading={submitting}
-              disabled={!requiredFilled || submitting}
-              icon="send"
-              onClick={onSubmit}
+              disabled={!requiredFilled}  // Removido submitting
+              icon="arrow_forward"  // Mudado de "send" para "arrow_forward"
+              onClick={onContinue}  // Mudado de onSubmit para onContinue
               className="whitespace-normal break-words"
             >
               <span className="inline-block">

@@ -1,12 +1,13 @@
 "use client";
 
 interface StepIndicatorProps {
-  current: 1 | 2;
+  current: 1 | 2 | 3;
 }
 
 const STEPS = [
   { number: 1, label: "Informações" },
   { number: 2, label: "Documentos" },
+  { number: 3, label: "Grade" },
 ];
 
 export default function StepIndicator({ current }: StepIndicatorProps) {
