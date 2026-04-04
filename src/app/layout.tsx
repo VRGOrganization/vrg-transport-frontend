@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import "./globals.css";
@@ -6,17 +6,23 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
 });
 
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-manrope",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "São Fidélis Transporte",
   description: "Sistema de transporte institucional para estudantes e servidores",
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1.0,
 };
 
 export default function RootLayout({
@@ -25,13 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-        {/* Anti-FOUC: aplica classe dark antes da hidratação */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
             var t = localStorage.getItem('theme') ||
@@ -42,7 +43,6 @@ export default function RootLayout({
       </head>
       <body
         className={`${inter.variable} ${manrope.variable} antialiased`}
-        suppressHydrationWarning
       >
         <ThemeProvider>
           {children}

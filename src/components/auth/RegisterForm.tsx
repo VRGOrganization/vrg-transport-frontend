@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { Mail, Phone, UserRound, Lock, Send} from "lucide-react";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -105,7 +106,7 @@ export function RegisterForm() {
         <Input
           label="Nome Completo"
           type="text"
-          icon="person"
+          icon={UserRound}
           placeholder="Seu nome completo"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -115,7 +116,7 @@ export function RegisterForm() {
         <Input
           label="Email"
           type="email"
-          icon="mail"
+          icon={Mail}
           placeholder="nome@email.com"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -125,7 +126,7 @@ export function RegisterForm() {
         <Input
           label="Telefone"
           type="tel"
-          icon="phone"
+          icon={Phone}
           placeholder="(22) 99999-9999"
           value={formData.telephone}
           onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
@@ -135,7 +136,7 @@ export function RegisterForm() {
         <Input
           label="Senha"
           type="password"
-          icon="lock"
+          icon={Lock} 
           placeholder="Mín. 8 caracteres, maiúscula e número"
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -145,7 +146,7 @@ export function RegisterForm() {
         <Input
           label="Confirmar Senha"
           type="password"
-          icon="lock"
+          icon={Lock}
           placeholder="Digite a senha novamente"
           value={formData.confirmPassword}
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -158,7 +159,7 @@ export function RegisterForm() {
           size="lg"
           fullWidth
           loading={loading}
-          icon="app_registration"
+          icon={Send}
           className="mt-4"
         >
           Criar Conta

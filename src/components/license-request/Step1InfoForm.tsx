@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { useInstitutionAutocomplete } from "@/hooks/useInstitutionAutocomplete";
+import { ArrowRight, BookOpenText, School } from "lucide-react";
 
 export interface Step1Data {
   institution: string;
@@ -26,13 +27,19 @@ const SHIFT_OPTIONS = [
   { value: "Integral", label: "Integral" },
 ];
 
-const BLOOD_TYPE_OPTIONS = [
-  "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-",
-];
+const BLOOD_TYPE_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoFormProps) {
-  const [errors, setErrors] = useState<Partial<Record<keyof Step1Data, string>>>({});
-  const [touched, setTouched] = useState<Partial<Record<keyof Step1Data, boolean>>>({});
+export default function Step1InfoForm({
+  data,
+  onChange,
+  onContinue,
+}: Step1InfoFormProps) {
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof Step1Data, string>>
+  >({});
+  const [touched, setTouched] = useState<
+    Partial<Record<keyof Step1Data, boolean>>
+  >({});
 
   const {
     institutionOptions,
@@ -46,10 +53,10 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
   const updateFormData = (updates: Partial<Step1Data>) => {
     const newData = { ...data, ...updates };
     onChange(newData);
-    
+
     const fieldName = Object.keys(updates)[0] as keyof Step1Data;
     if (errors[fieldName]) {
-      setErrors(prev => ({ ...prev, [fieldName]: undefined }));
+      setErrors((prev) => ({ ...prev, [fieldName]: undefined }));
     }
   };
 
@@ -65,25 +72,25 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof Step1Data, string>> = {};
-    
+
     if (!data.institution || data.institution.trim() === "") {
       newErrors.institution = "Instituição de ensino é obrigatória";
     }
-    
+
     if (!data.degree || data.degree.trim() === "") {
       newErrors.degree = "Curso é obrigatório";
     }
-    
+
     if (!data.shift || data.shift === "") {
       newErrors.shift = "Turno é obrigatório";
     }
-    
+
     if (!data.bloodType || data.bloodType === "") {
       newErrors.bloodType = "Tipo sanguíneo é obrigatório";
     }
-    
+
     setErrors(newErrors);
-    
+
     const allTouched: Partial<Record<keyof Step1Data, boolean>> = {
       institution: true,
       degree: true,
@@ -91,7 +98,7 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
       bloodType: true,
     };
     setTouched(allTouched);
-    
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -103,7 +110,7 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
 
   const markAsTouched = (field: keyof Step1Data) => {
     if (!touched[field]) {
-      setTouched(prev => ({ ...prev, [field]: true }));
+      setTouched((prev) => ({ ...prev, [field]: true }));
     }
   };
 
@@ -112,7 +119,7 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
       <div>
         <AutocompleteInput
           label="Instituição de Ensino"
-          icon="school"
+          icon={School}
           placeholder="Digite o nome da faculdade"
           options={institutionOptions}
           value={data.institution}
@@ -126,12 +133,17 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
       <div>
         <AutocompleteInput
           label="Curso"
-          icon="menu_book"
-          placeholder="Digite o nome do curso"
+          icon={BookOpenText}
+          placeholder={
+            data.institution
+              ? "Digite o nome do curso"
+              : "Selecione uma instituição primeiro"
+          }
           options={courseOptions}
           value={data.degree}
           onValueChange={onCourseChange}
           disabled={!data.institution}
+          
           onBlur={() => markAsTouched("degree")}
           required
           error={touched.degree ? errors.degree : undefined}
@@ -140,7 +152,10 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
 
       {/* Turno - Select estilizado */}
       <div className="space-y-2">
-        <label htmlFor="shift" className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+        <label
+          htmlFor="shift"
+          className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1"
+        >
           Turno <span className="text-error">*</span>
         </label>
         <select
@@ -154,12 +169,15 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           aria-required="true"
           aria-invalid={touched.shift && !!errors.shift}
           className={`w-full h-12 px-4 rounded-xl text-sm font-medium bg-surface-container-low text-on-surface border transition-all outline-none
-            ${touched.shift && errors.shift 
-              ? "border-error focus:border-error focus:ring-error/20" 
-              : "border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary"
+            ${
+              touched.shift && errors.shift
+                ? "border-error focus:border-error focus:ring-error/20"
+                : "border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary"
             }`}
         >
-          <option value="" disabled>Selecione o turno</option>
+          <option value="" disabled>
+            Selecione o turno
+          </option>
           {SHIFT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -167,13 +185,18 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           ))}
         </select>
         {touched.shift && errors.shift && (
-          <p className="text-xs text-error mt-1 ml-1" role="alert">{errors.shift}</p>
+          <p className="text-xs text-error mt-1 ml-1" role="alert">
+            {errors.shift}
+          </p>
         )}
       </div>
 
       {/* Tipo Sanguíneo - Select estilizado */}
       <div className="space-y-2">
-        <label htmlFor="bloodType" className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+        <label
+          htmlFor="bloodType"
+          className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1"
+        >
           Tipo Sanguíneo <span className="text-error">*</span>
         </label>
         <select
@@ -187,12 +210,15 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           aria-required="true"
           aria-invalid={touched.bloodType && !!errors.bloodType}
           className={`w-full h-12 px-4 rounded-xl text-sm font-medium bg-surface-container-low text-on-surface border transition-all outline-none
-            ${touched.bloodType && errors.bloodType 
-              ? "border-error focus:border-error focus:ring-error/20" 
-              : "border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary"
+            ${
+              touched.bloodType && errors.bloodType
+                ? "border-error focus:border-error focus:ring-error/20"
+                : "border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary"
             }`}
         >
-          <option value="" disabled>Selecione o tipo sanguíneo</option>
+          <option value="" disabled>
+            Selecione o tipo sanguíneo
+          </option>
           {BLOOD_TYPE_OPTIONS.map((bt) => (
             <option key={bt} value={bt}>
               {bt}
@@ -200,7 +226,9 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
           ))}
         </select>
         {touched.bloodType && errors.bloodType && (
-          <p className="text-xs text-error mt-1 ml-1" role="alert">{errors.bloodType}</p>
+          <p className="text-xs text-error mt-1 ml-1" role="alert">
+            {errors.bloodType}
+          </p>
         )}
       </div>
 
@@ -210,7 +238,7 @@ export default function Step1InfoForm({ data, onChange, onContinue }: Step1InfoF
         size="lg"
         fullWidth
         onClick={handleContinue}
-        icon="arrow_forward"
+        icon={ArrowRight}
       >
         Continuar
       </Button>

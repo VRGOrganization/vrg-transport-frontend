@@ -1,54 +1,251 @@
-import { RegisterForm } from "@/components/auth/RegisterForm";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+"use client";
 
-export default function RegisterPage() {
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
+import { useInstitutionAutocomplete } from "@/hooks/useInstitutionAutocomplete";
+import { School, BookOpen, BookOpenText } from "lucide-react";
+
+export interface Step1Data {
+  institution: string;
+  degree: string;
+  shift: string;
+  bloodType: string;
+  bus: string;
+}
+
+interface Step1InfoFormProps {
+  data: Step1Data;
+  onChange: (data: Step1Data) => void;
+  onContinue: () => void;
+}
+
+const SHIFT_OPTIONS = [
+  { value: "Manhã", label: "Manhã" },
+  { value: "Tarde", label: "Tarde" },
+  { value: "Noite", label: "Noite" },
+  { value: "Integral", label: "Integral" },
+];
+
+const BLOOD_TYPE_OPTIONS = [
+  "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-",
+];
+
+export default function Step1InfoForm({
+  data,
+  onChange,
+  onContinue,
+}: Step1InfoFormProps) {
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof Step1Data, string>>
+  >({});
+  const [touched, setTouched] = useState<
+    Partial<Record<keyof Step1Data, boolean>>
+  >({});
+
+  const {
+    institutionOptions,
+    courseOptions,
+    handleInstitutionChange,
+    handleCourseChange,
+  } = useInstitutionAutocomplete(data.institution, data.degree);
+
+  const updateFormData = (updates: Partial<Step1Data>) => {
+    const newData = { ...data, ...updates };
+    onChange(newData);
+
+    const fieldName = Object.keys(updates)[0] as keyof Step1Data;
+    if (errors[fieldName]) {
+      setErrors((prev) => ({ ...prev, [fieldName]: undefined }));
+    }
+  };
+
+  const onInstitutionChange = (newInstitution: string) => {
+    handleInstitutionChange(newInstitution);
+    updateFormData({ institution: newInstitution, degree: "" });
+  };
+
+  const onCourseChange = (newCourse: string) => {
+    handleCourseChange(newCourse);
+    updateFormData({ degree: newCourse });
+  };
+
+  const validateForm = () => {
+    const newErrors: Partial<Record<keyof Step1Data, string>> = {};
+
+    if (!data.institution?.trim()) {
+      newErrors.institution = "Instituição de ensino é obrigatória";
+    }
+
+    if (!data.degree?.trim()) {
+      newErrors.degree = "Curso é obrigatório";
+    }
+
+    if (!data.shift) {
+      newErrors.shift = "Turno é obrigatório";
+    }
+
+    if (!data.bloodType) {
+      newErrors.bloodType = "Tipo sanguíneo é obrigatório";
+    }
+
+    setErrors(newErrors);
+
+    setTouched({
+      institution: true,
+      degree: true,
+      shift: true,
+      bloodType: true,
+    });
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleContinue = () => {
+    if (validateForm()) onContinue();
+  };
+
+  const markAsTouched = (field: keyof Step1Data) => {
+    if (!touched[field]) {
+      setTouched((prev) => ({ ...prev, [field]: true }));
+    }
+  };
+
   return (
-    <main className="flex-grow flex items-center justify-center p-4 md:p-8 bg-mesh">
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low bg-surface-container-lowest/80 backdrop-blur-sm rounded-full" />
-      </div>
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden bg-surface-container-lowest shadow-2xl rounded-xl">
-        {/* Left Side: Brand Visuals & Info - Desktop only */}
-        <div className="hidden lg:flex flex-col justify-between p-12 bg-primary relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <svg height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" width="100%">
-              <path d="M0 100 L100 0 L100 100 Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-3xl">
-                  directions_bus
-                </span>
-              </div>
-              <h1 className="font-headline font-extrabold text-2xl text-white tracking-tight">
-                São Fidélis Transporte
-              </h1>
-            </div>
-            <h2 className="font-headline text-4xl font-bold text-white mb-6 leading-tight">
-              Comece sua <span className="text-secondary-fixed">jornada</span> conosco.
-            </h2>
-            <p className="text-primary-fixed-dim text-lg max-w-md">
-              Crie sua conta e tenha acesso ao transporte institucional.
-            </p>
-          </div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary rounded-full blur-3xl opacity-20" />
-        </div>
+    <div className="space-y-6">
+      {/* Instituição */}
+      <AutocompleteInput
+        label="Instituição de Ensino"
+        icon={School}
+        placeholder="Digite o nome da faculdade"
+        options={institutionOptions}
+        value={data.institution}
+        onValueChange={onInstitutionChange}
+        onBlur={() => markAsTouched("institution")}
+        required
+        error={touched.institution ? errors.institution : undefined}
+      />
 
-        {/* Right Side: Register Form */}
-        <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <span className="material-symbols-outlined text-primary text-4xl">
-              directions_bus
-            </span>
-            <span className="font-headline font-extrabold text-xl text-primary tracking-tight">
-              São Fidélis Transporte
-            </span>
-          </div>
-          <RegisterForm />
-        </div>
+      {/* Curso */}
+      <AutocompleteInput
+        label="Curso"
+        icon={BookOpenText}
+        placeholder="Digite o nome do curso"
+        options={courseOptions}
+        value={data.degree}
+        onValueChange={onCourseChange}
+        disabled={!data.institution}
+        onBlur={() => markAsTouched("degree")}
+        required
+        error={touched.degree ? errors.degree : undefined}
+      />
+
+      {/* Turno */}
+      <div className="space-y-2">
+        <label
+          htmlFor="shift"
+          className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1"
+        >
+          Turno <span className="text-error">*</span>
+        </label>
+
+        <select
+          id="shift"
+          value={data.shift}
+          onChange={(e) => {
+            updateFormData({ shift: e.target.value });
+            markAsTouched("shift");
+          }}
+          onBlur={() => markAsTouched("shift")}
+          aria-required="true"
+          aria-invalid={touched.shift && !!errors.shift}
+          className={`
+            w-full h-12 px-4 rounded-xl text-sm font-medium 
+            bg-surface-container-low text-on-surface 
+            border transition-all outline-none
+            focus:ring-2 focus:ring-primary/20
+            ${
+              touched.shift && errors.shift
+                ? "border-error focus:border-error"
+                : "border-outline-variant focus:border-primary"
+            }
+          `}
+        >
+          <option value="" disabled>
+            Selecione o turno
+          </option>
+          {SHIFT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {touched.shift && errors.shift && (
+          <p className="text-xs text-error ml-1" role="alert">
+            {errors.shift}
+          </p>
+        )}
       </div>
-    </main>
+
+      {/* Tipo sanguíneo */}
+      <div className="space-y-2">
+        <label
+          htmlFor="bloodType"
+          className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1"
+        >
+          Tipo Sanguíneo <span className="text-error">*</span>
+        </label>
+
+        <select
+          id="bloodType"
+          value={data.bloodType}
+          onChange={(e) => {
+            updateFormData({ bloodType: e.target.value });
+            markAsTouched("bloodType");
+          }}
+          onBlur={() => markAsTouched("bloodType")}
+          aria-required="true"
+          aria-invalid={touched.bloodType && !!errors.bloodType}
+          className={`
+            w-full h-12 px-4 rounded-xl text-sm font-medium 
+            bg-surface-container-low text-on-surface 
+            border transition-all outline-none
+            focus:ring-2 focus:ring-primary/20
+            ${
+              touched.bloodType && errors.bloodType
+                ? "border-error focus:border-error"
+                : "border-outline-variant focus:border-primary"
+            }
+          `}
+        >
+          <option value="" disabled>
+            Selecione o tipo sanguíneo
+          </option>
+          {BLOOD_TYPE_OPTIONS.map((bt) => (
+            <option key={bt} value={bt}>
+              {bt}
+            </option>
+          ))}
+        </select>
+
+        {touched.bloodType && errors.bloodType && (
+          <p className="text-xs text-error ml-1" role="alert">
+            {errors.bloodType}
+          </p>
+        )}
+      </div>
+
+      {/* Botão */}
+      <Button
+        type="button"
+        variant="primary"
+        size="lg"
+        fullWidth
+        onClick={handleContinue}
+      >
+        Continuar
+      </Button>
+    </div>
   );
 }

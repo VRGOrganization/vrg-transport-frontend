@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { ArrowRight, Lock, AtSign, MessageCircleQuestionMark, Map, } from "lucide-react";
+
 
 export function LoginForm() {
   const router = useRouter();
@@ -69,7 +71,7 @@ export function LoginForm() {
           </label>
           <Input
             type="email"
-            icon="alternate_email"
+            icon={AtSign}
             placeholder="nome@email.com"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -83,7 +85,7 @@ export function LoginForm() {
           </label>
           <Input
             type="password"
-            icon="lock"
+            icon={Lock}
             placeholder="••••••••"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -97,7 +99,7 @@ export function LoginForm() {
           size="lg"
           fullWidth
           loading={loading}
-          icon="arrow_forward"
+          icon={ArrowRight}
         >
           Entrar no Sistema
         </Button>
@@ -114,11 +116,11 @@ export function LoginForm() {
 
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="bg-surface-container-low p-4 rounded-2xl flex flex-col gap-3">
-          <span className="material-symbols-outlined text-primary text-2xl">help_outline</span>
+          <MessageCircleQuestionMark className="text-primary text-2xl" />
           <span className="text-xs font-bold leading-tight text-on-surface">Suporte ao Usuário</span>
         </div>
         <div className="bg-primary/5 p-4 rounded-2xl flex flex-col gap-3 border border-primary/10">
-          <span className="material-symbols-outlined text-primary text-2xl">map</span>
+          <Map className="text-primary text-2xl" />
           <span className="text-xs font-bold leading-tight text-on-surface">Ver Rotas Ativas</span>
         </div>
       </div>
