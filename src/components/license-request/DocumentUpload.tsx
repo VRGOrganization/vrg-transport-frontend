@@ -1,108 +1,229 @@
 "use client";
 
 import { useRef } from "react";
+import {
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Loader2,
+  FileText,
+  ImagePlus,
+  FilePlus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { DocumentConfig } from "@/constants/license-documents";
+import type { ImageEntry } from "@/hooks/useImageProcessor";
+import type { ImageValidationStatus } from "@/types/imageValidation";
 
-export default function DocumentUpload({ 
-  config, 
-  entry, 
-  onFileSelect, 
-  onRemove, 
-  disabled, 
-  acceptPdf 
-}: any) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const status = entry?.result?.status ?? "idle";
-  const isPdf = entry?.file?.type === "application/pdf";
-  const isProcessing = status === "processing";
+interface DocumentUploadProps {
+  config: DocumentConfig;
+  entry: ImageEntry | null;
+  onFileSelect: (file: File) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+}
+
+// ─── Status visual ────────────────────────────────────────────
+
+function StatusIcon({ status }: { status: ImageValidationStatus }) {
+  if (status === "ok") return <CheckCircle className="w-5 h-5 text-success" />;
+  if (status === "warning") return <AlertTriangle className="w-5 h-5 text-warning" />;
+  if (status === "error") return <XCircle className="w-5 h-5 text-error" />;
+  if (status === "processing") return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
+  return null;
+}
+
+// ─── Painel de checagens detalhadas ──────────────────────────
+// Exibe o resultado de cada verificação realizada na imagem.
+// Só aparece após o processamento (não durante).
+
+interface CheckRowProps {
+  label: string;
+  passed: boolean;
+  detail?: string;
+}
+
+function CheckRow({ label, passed, detail }: CheckRowProps) {
+  return (
+    <div className="flex items-start gap-2">
+      {passed
+        ? <CheckCircle className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
+        : <XCircle className="w-3.5 h-3.5 text-error shrink-0 mt-0.5" />
+      }
+      <div className="min-w-0">
+        <span className={cn("text-[11px] font-medium", passed ? "text-success" : "text-error")}>
+          {label}
+        </span>
+        {!passed && detail && (
+          <p className="text-[10px] text-on-surface-variant leading-tight mt-0.5">{detail}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ValidationPanel({ entry, validateRatio }: { entry: ImageEntry; validateRatio: boolean }) {
+  const { result } = entry;
+  if (!result || result.status === "processing" || result.status === "idle" || result.status === "pending") return null;
+
+  const isPdf = entry.file.type === "application/pdf";
+  if (isPdf) return null; // PDFs não têm checagens de imagem
+
+  const checks: CheckRowProps[] = [];
+
+  // Proporção 3x4 — só para ProfilePhoto
+  if (validateRatio && result.aspectRatio) {
+    checks.push({
+      label: `Proporção 3x4 (${result.aspectRatio.ratio.toFixed(2)})`,
+      passed: result.aspectRatio.valid,
+      detail: result.aspectRatio.message,
+    });
+  }
+
+  // Rosto centralizado — só para ProfilePhoto
+  if (validateRatio && result.faceHeuristic) {
+    checks.push({
+      label: "Rosto centralizado",
+      passed: result.faceHeuristic.likelyCentered,
+      detail: result.faceHeuristic.message,
+    });
+  }
+
+  // NSFW — sempre que o modelo rodou
+  if (result.nsfw) {
+    const nsfwOk = result.nsfw.porn < 0.2 && result.nsfw.hentai < 0.2 && result.nsfw.sexy < 0.4;
+    checks.push({
+      label: `Conteúdo adequado (${Math.round(result.nsfw.neutral * 100)}% neutro)`,
+      passed: nsfwOk,
+      detail: !nsfwOk
+        ? `Porn: ${Math.round(result.nsfw.porn * 100)}% · Hentai: ${Math.round(result.nsfw.hentai * 100)}% · Sexy: ${Math.round(result.nsfw.sexy * 100)}%`
+        : undefined,
+    });
+  }
+
+  if (checks.length === 0) return null;
 
   return (
-    <div className={cn(
-      "rounded-xl border transition-all duration-200 overflow-hidden",
-      status === "ok" ? "border-success bg-success/5" : "border-outline-variant bg-surface",
-      status === "error" && "border-error bg-error/5"
-    )}>
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-surface-container-high p-2 rounded-lg">
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>
-              {config.icon}
-            </span>
+    <div className="mt-2 px-3 py-2 bg-surface-container-high rounded-lg space-y-1.5">
+      {checks.map((c) => (
+        <CheckRow key={c.label} {...c} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Componente principal ────────────────────────────────────
+
+export default function DocumentUpload({
+  config,
+  entry,
+  onFileSelect,
+  onRemove,
+  disabled = false,
+}: DocumentUploadProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const status: ImageValidationStatus = entry?.result?.status ?? "idle";
+  const isPdf = entry?.file?.type === "application/pdf";
+  const isProcessing = status === "processing";
+  const Icon = config.icon;
+
+  const cardBorder = cn(
+    "rounded-xl border transition-all duration-200 overflow-hidden",
+    status === "ok"      && "border-success/40 bg-success-container/30",
+    status === "error"   && "border-error/40 bg-error-container/30",
+    status === "warning" && "border-warning/40 bg-warning-container/30",
+    (status === "idle" || status === "processing" || status === "pending") && "border-outline-variant/50 bg-surface-container-low",
+  );
+
+  return (
+    <div className={cardBorder}>
+      {/* ── Cabeçalho ── */}
+      <div className="p-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={cn(
+            "p-2 rounded-lg shrink-0 transition-colors",
+            status === "ok" ? "bg-success/10" : "bg-surface-container-high"
+          )}>
+            <Icon className={cn("w-5 h-5", status === "ok" ? "text-success" : "text-primary")} />
           </div>
-          <div>
-            <p className="text-sm font-bold text-on-surface">
-              {config.label} {config.required && <span className="text-error">*</span>}
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-on-surface flex items-center gap-1">
+              {config.label}
+              {config.required && <span className="text-error text-xs">*</span>}
             </p>
             <p className="text-[11px] text-on-surface-variant leading-tight">
               {config.description}
             </p>
           </div>
         </div>
-        
-        {status === "ok" && (
-          <span className="material-symbols-outlined text-success">check_circle</span>
-        )}
+        <div className="shrink-0">
+          <StatusIcon status={status} />
+        </div>
       </div>
 
+      {/* ── Área de arquivo ── */}
       {entry ? (
-        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1">
-          <div className="flex items-center gap-3 p-2 bg-surface-container-low rounded-lg border border-outline-variant">
+        <div className="px-4 pb-4 space-y-2">
+          {/* Preview row */}
+          <div className="flex items-center gap-3 p-2 bg-surface-container-low rounded-lg border border-outline-variant/40">
             {/* Thumbnail */}
-            <div className="h-12 w-12 shrink-0 flex items-center justify-center bg-surface-container-high rounded border overflow-hidden">
+            <div className="h-12 w-12 shrink-0 flex items-center justify-center bg-surface-container-high rounded border border-outline-variant/30 overflow-hidden">
               {isProcessing ? (
-                <span className="material-symbols-outlined animate-spin text-primary">autorenew</span>
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
               ) : isPdf ? (
-                <span className="material-symbols-outlined text-error">picture_as_pdf</span>
-              ) : (
+                <FileText className="w-6 h-6 text-error" />
+              ) : entry.previewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={entry.previewUrl} alt="Preview" className="h-full w-full object-cover" />
-              )}
+              ) : null}
             </div>
 
-            {/* Info do Arquivo */}
+            {/* Nome e ações */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate text-on-surface">{entry.file.name}</p>
-              <div className="flex gap-3 mt-1">
-                <button 
-                  type="button" 
-                  onClick={() => inputRef.current?.click()} 
-                  className="text-[11px] text-primary font-bold hover:underline"
+              <p className="text-xs font-semibold truncate text-on-surface">{entry.file.name}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={disabled || isProcessing}
+                  className="flex items-center gap-1 text-[11px] text-primary font-bold hover:opacity-70 transition-opacity disabled:opacity-40"
                 >
+                  <Pencil className="w-3 h-3" />
                   Alterar
                 </button>
-                <button 
-                  type="button" 
-                  onClick={onRemove} 
-                  className="text-[11px] text-error font-bold hover:underline"
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  disabled={disabled || isProcessing}
+                  className="flex items-center gap-1 text-[11px] text-error font-bold hover:opacity-70 transition-opacity disabled:opacity-40"
                 >
+                  <Trash2 className="w-3 h-3" />
                   Remover
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Mensagens de Erro/Alerta */}
-          {entry.result?.message && !isProcessing && (
-            <div className={cn(
-              "mt-2 p-2 rounded text-[10px] flex gap-2 items-start",
-              status === "error" ? "bg-error/10 text-error" : "bg-warning/10 text-on-warning"
-            )}>
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
-                {status === "error" ? "report" : "warning"}
-              </span>
-              <span>{entry.result.message}</span>
-            </div>
-          )}
+          {/* Painel de verificações */}
+          <ValidationPanel entry={entry} validateRatio={config.validateRatio} />
         </div>
       ) : (
+        /* ── Botão de seleção ── */
         <div className="px-4 pb-4">
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="w-full py-3 border-2 border-dashed border-outline-variant rounded-xl text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 border-2 border-dashed border-outline-variant rounded-xl text-xs font-bold text-primary hover:bg-primary/5 hover:border-primary/50 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-40"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_a_photo</span>
-            Selecionar {acceptPdf ? "Documento (Img ou PDF)" : "Foto 3x4"}
+            {config.acceptPdf
+              ? <FilePlus className="w-4 h-4" />
+              : <ImagePlus className="w-4 h-4" />
+            }
+            {config.acceptPdf ? "Selecionar Imagem ou PDF" : "Selecionar Foto 3x4"}
           </button>
         </div>
       )}
@@ -110,7 +231,7 @@ export default function DocumentUpload({
       <input
         ref={inputRef}
         type="file"
-        accept={acceptPdf ? "image/jpeg,image/png,application/pdf" : "image/jpeg,image/png"}
+        accept={config.acceptPdf ? "image/jpeg,image/png,application/pdf" : "image/jpeg,image/png"}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) onFileSelect(file);

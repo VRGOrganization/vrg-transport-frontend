@@ -2,6 +2,7 @@
 
 import { useMemo, useState as useSafeState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Send, TriangleAlert } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -119,17 +120,13 @@ export default function Step3Grade({
         role="alert"
         aria-live="polite"
       >
-        <span
-          className="material-symbols-outlined text-warning flex-shrink-0"
-          style={{ fontSize: "20px", marginTop: "1px" }}
-        >
-          warning
-        </span>
+        <TriangleAlert className="text-warning" />
         <div className="text-sm text-on-surface leading-relaxed">
           <p className="font-bold text-warning">Atenção!</p>
           <p>
-            Garanta que os horários selecionados abaixo são <strong>exatamente os mesmos</strong> que você enviou no documento da etapa anterior. 
-        
+            Garanta que os horários selecionados abaixo são{" "}
+            <strong>exatamente os mesmos</strong> que você enviou no documento
+            da etapa anterior.
           </p>
         </div>
       </div>
@@ -155,7 +152,7 @@ export default function Step3Grade({
                 type="button"
                 onClick={() => setActiveDay(day.short)}
                 aria-label={`Selecionar ${day.full}${isToday ? " (hoje)" : ""}`}
-                className={`relative flex-shrink-0 flex flex-col items-center justify-center rounded-2xl transition-all active:scale-95 ${
+                className={`relative shrink-0 flex flex-col items-center justify-center rounded-2xl transition-all active:scale-95 ${
                   active
                     ? "bg-primary text-white shadow-md"
                     : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
@@ -170,7 +167,7 @@ export default function Step3Grade({
                   {day.short}
                 </span>
                 {/* Removeu-se o <span> com dateNum */}
-                
+
                 {hasSel && !active && (
                   <span
                     className="absolute bottom-2 bg-primary rounded-full"
@@ -194,7 +191,6 @@ export default function Step3Grade({
             );
           })}
         </div>
-       
       </div>
 
       {/* Períodos */}
@@ -218,7 +214,7 @@ export default function Step3Grade({
               style={{ padding: "16px 20px" }}
             >
               <div
-                className={`flex items-center justify-center rounded-xl flex-shrink-0 ${
+                className={`flex items-center justify-center rounded-xl shrink-0 ${
                   period.selected
                     ? "bg-primary/10"
                     : "bg-surface-container-high"
@@ -253,7 +249,7 @@ export default function Step3Grade({
               </div>
 
               <div
-                className={`flex items-center justify-center rounded-full flex-shrink-0 transition-all ${
+                className={`flex items-center justify-center rounded-full shrink-0 transition-all ${
                   period.selected
                     ? "bg-primary"
                     : "border-2 border-outline-variant bg-transparent"
@@ -274,8 +270,6 @@ export default function Step3Grade({
           ))}
         </div>
       </div>
-
-     
 
       {/* Footer */}
       <div className="border-t border-outline-variant pt-4 space-y-4">
@@ -305,7 +299,9 @@ export default function Step3Grade({
             type="button"
             onClick={onBack}
             disabled={submitting}
-            className="flex items-center gap-1 text-on-surface-variant font-semibold text-sm active:scale-95 transition-all disabled:opacity-50 px-4 py-2 rounded-lg hover:bg-surface-container-high"
+            className="flex items-center gap-1 text-on-surface-variant 
+            font-semibold text-sm active:scale-95 transition-all disabled:opacity-50 px-4 py-2 rounded-lg 
+            hover:bg-surface-container-high"
             aria-label="Voltar para etapa anterior"
           >
             <span className="material-symbols-outlined text-lg">
@@ -322,7 +318,7 @@ export default function Step3Grade({
               fullWidth
               loading={submitting}
               disabled={!canConfirm || submitting}
-              icon="send"
+              icon={Send}
               onClick={onSubmit}
             >
               Finalizar Solicitação

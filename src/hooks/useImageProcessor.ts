@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import type { ImageValidationResult, ImageValidationStatus } from "@/types/imageValidation";
+import { useState, useCallback, useEffect } from "react";
+import type { ImageValidationResult } from "@/types/imageValidation";
 import { preprocessImage, getTargetSize } from "@/utils/preprocessImage";
 import { validate3x4Ratio, analyzeFaceHeuristic } from "@/utils/validate3x4";
 import { analyzeNSFW, interpretNSFW } from "@/utils/analyzeNSFW";
@@ -17,54 +17,43 @@ export interface ImageProcessorState {
   entries: (ImageEntry | null)[];
   isProcessing: boolean;
   allValid: boolean;
-  setFile: (index: number, file: File, shouldValidateRatio: boolean) => void;
+  setFile: (index: number, file: File, validateRatio: boolean) => void;
   removeEntry: (index: number) => void;
 }
 
 async function runPipeline(
   file: File,
   model: NSFWModel | null,
-  shouldValidateRatio: boolean
+  validateRatio: boolean
 ): Promise<ImageValidationResult> {
-  
-  // 1. SUPORTE A PDF: Se for PDF, ignora validações de imagem
+
+  // PDFs passam direto — sem análise de imagem
   if (file.type === "application/pdf") {
-    return {
-      status: "ok",
-      processedBlob: file,
-      nsfw: null,
-      aspectRatio: null,
-      faceHeuristic: null,
-      message: "",
-    };
+    return { status: "ok", processedBlob: file, nsfw: null, aspectRatio: null, faceHeuristic: null, message: "" };
   }
 
-  // 2. PROCESSAMENTO DE IMAGEM
+  // 1. Pré-processamento
   const targetSize = getTargetSize();
-  let preprocessed;
-  
+  let preprocessed: Awaited<ReturnType<typeof preprocessImage>>;
   try {
     preprocessed = await preprocessImage(file, { targetSize });
   } catch {
-    return { 
-      status: "error", processedBlob: null, nsfw: null, 
-      aspectRatio: null, faceHeuristic: null, 
-      message: "Erro ao processar imagem." 
-    };
+    return { status: "error", processedBlob: null, nsfw: null, aspectRatio: null, faceHeuristic: null, message: "Erro ao processar imagem. Tente novamente." };
   }
 
   const { blob, canvas, width, height } = preprocessed;
-  
-  // Validação 3x4 e Rosto (Apenas se for Selfie/shouldValidateRatio)
-  const aspectRatio = shouldValidateRatio 
-    ? validate3x4Ratio(width, height)
-    : { valid: true, ratio: width/height, message: "" };
 
-  const faceHeuristic = shouldValidateRatio
+  // 2. Proporção 3x4 e rosto — só para ProfilePhoto
+  const aspectRatio = validateRatio
+    ? validate3x4Ratio(width, height)
+    : { valid: true, ratio: width / height, message: "" };
+
+  const faceHeuristic = validateRatio
     ? analyzeFaceHeuristic(canvas)
     : { likelyCentered: true, message: "" };
 
-  let nsfw: any = null;
+  // 3. NSFW — roda em todas as imagens
+  let nsfw: ImageValidationResult["nsfw"] = null;
   let nsfwMessage = "";
 
   if (model) {
@@ -72,91 +61,75 @@ async function runPipeline(
       nsfw = await analyzeNSFW(model, canvas);
       const { decision, message } = interpretNSFW(nsfw);
       if (decision === "block") {
-        return { status: "error", processedBlob: null, nsfw, aspectRatio, faceHeuristic, message: message || "Conteúdo impróprio." };
+        return { status: "error", processedBlob: null, nsfw, aspectRatio, faceHeuristic, message: message || "Conteúdo impróprio detectado." };
       }
       if (decision === "warn") nsfwMessage = message || "";
-    } catch { nsfwMessage = ""; }
+    } catch {
+      // falha silenciosa
+    }
   }
 
+  // 4. Erros estruturais
   const errors: string[] = [];
-  // CORREÇÃO DO ERRO TS2345: Usando operador OR para garantir string
-  if (!aspectRatio.valid) errors.push(aspectRatio.message || "Proporção inválida.");
-  if (!faceHeuristic.likelyCentered) errors.push(faceHeuristic.message || "Rosto não identificado.");
+  if (!aspectRatio.valid && aspectRatio.message) errors.push(aspectRatio.message);
+  if (!faceHeuristic.likelyCentered && faceHeuristic.message) errors.push(faceHeuristic.message);
 
-  const finalErrorMessage = errors.filter(Boolean).join(" ");
-
-  if (finalErrorMessage) {
-    return { 
-      status: "error", 
-      processedBlob: blob, 
-      nsfw, 
-      aspectRatio, 
-      faceHeuristic, 
-      message: finalErrorMessage 
-    };
+  if (errors.length > 0) {
+    return { status: "error", processedBlob: blob, nsfw, aspectRatio, faceHeuristic, message: errors.join(" ") };
   }
 
-  return {
-    status: nsfwMessage ? "warning" : "ok",
-    processedBlob: blob,
-    nsfw,
-    aspectRatio,
-    faceHeuristic,
-    message: nsfwMessage,
-  };
+  return { status: nsfwMessage ? "warning" : "ok", processedBlob: blob, nsfw, aspectRatio, faceHeuristic, message: nsfwMessage };
 }
 
-export function useImageProcessor(
-  model: NSFWModel | null,
-  slotsCount: number = 5
-): ImageProcessorState {
-  const [entries, setEntries] = useState<(ImageEntry | null)[]>(new Array(slotsCount).fill(null));
+export function useImageProcessor(model: NSFWModel | null, slotsCount: number): ImageProcessorState {
+  const [entries, setEntries] = useState<(ImageEntry | null)[]>(
+    () => new Array(slotsCount).fill(null)
+  );
   const [processingCount, setProcessingCount] = useState(0);
 
-  const processEntry = useCallback(
-    async (index: number, entry: ImageEntry, shouldValidateRatio: boolean) => {
-      setProcessingCount((c) => c + 1);
+  useEffect(() => {
+    return () => {
       setEntries((prev) => {
-        const next = [...prev];
-        next[index] = { ...entry, result: { status: "processing", processedBlob: null, nsfw: null, aspectRatio: null, faceHeuristic: null, message: "Analisando..." } };
-        return next;
-      });
-
-      const result = await runPipeline(entry.file, model, shouldValidateRatio);
-
-      setEntries((prev) => {
-        if (prev[index]?.file === entry.file) {
-          const next = [...prev];
-          next[index] = { ...prev[index]!, result };
-          return next;
-        }
+        prev.forEach((e) => { if (e?.previewUrl) URL.revokeObjectURL(e.previewUrl); });
         return prev;
       });
-      setProcessingCount((c) => c - 1);
-    },
-    [model]
-  );
+    };
+  }, []);
 
-  const setFile = useCallback(
-    (index: number, file: File, shouldValidateRatio: boolean) => {
-      const isPdf = file.type === "application/pdf";
-      const newEntry: ImageEntry = {
-        file,
-        previewUrl: isPdf ? "" : URL.createObjectURL(file),
-        result: null
-      };
+  const processEntry = useCallback(async (index: number, entry: ImageEntry, validateRatio: boolean) => {
+    setProcessingCount((c) => c + 1);
+    setEntries((prev) => {
+      const next = [...prev];
+      next[index] = { ...entry, result: { status: "processing", processedBlob: null, nsfw: null, aspectRatio: null, faceHeuristic: null, message: "Analisando..." } };
+      return next;
+    });
 
-      setEntries((prev) => {
-        const next = [...prev];
-        if (next[index]?.previewUrl) URL.revokeObjectURL(next[index]!.previewUrl);
-        next[index] = newEntry;
-        return next;
-      });
+    const result = await runPipeline(entry.file, model, validateRatio);
 
-      processEntry(index, newEntry, shouldValidateRatio);
-    },
-    [processEntry]
-  );
+    setEntries((prev) => {
+      if (prev[index]?.file !== entry.file) return prev;
+      const next = [...prev];
+      next[index] = { ...prev[index]!, result };
+      return next;
+    });
+    setProcessingCount((c) => c - 1);
+  }, [model]);
+
+  const setFile = useCallback((index: number, file: File, validateRatio: boolean) => {
+    const isPdf = file.type === "application/pdf";
+    const newEntry: ImageEntry = {
+      file,
+      previewUrl: isPdf ? "" : URL.createObjectURL(file),
+      result: null,
+    };
+    setEntries((prev) => {
+      const next = [...prev];
+      if (next[index]?.previewUrl) URL.revokeObjectURL(next[index]!.previewUrl);
+      next[index] = newEntry;
+      return next;
+    });
+    processEntry(index, newEntry, validateRatio);
+  }, [processEntry]);
 
   const removeEntry = useCallback((index: number) => {
     setEntries((prev) => {
@@ -167,8 +140,8 @@ export function useImageProcessor(
     });
   }, []);
 
-  const activeEntries = entries.filter(e => e !== null);
-  const allValid = activeEntries.length > 0 && activeEntries.every(e => e?.result?.status === "ok");
+  // Todos os slots devem ter arquivo E status "ok"
+  const allValid = entries.length > 0 && entries.every((e) => e !== null && e.result?.status === "ok");
 
   return { entries, isProcessing: processingCount > 0, allValid, setFile, removeEntry };
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 interface StepIndicatorProps {
   current: 1 | 2 | 3;
 }
@@ -8,51 +11,46 @@ const STEPS = [
   { number: 1, label: "Informações" },
   { number: 2, label: "Documentos" },
   { number: 3, label: "Grade" },
-];
+] as const;
 
 export default function StepIndicator({ current }: StepIndicatorProps) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0", marginBottom: "32px" }}>
+    <div className="flex items-center mb-8">
       {STEPS.map((step, index) => {
         const done = step.number < current;
         const active = step.number === current;
+        const last = index === STEPS.length - 1;
 
         return (
-          <div key={step.number} style={{ display: "flex", alignItems: "center", flex: index < STEPS.length - 1 ? 1 : undefined }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+          <div key={step.number} className={cn("flex items-center", !last && "flex-1")}>
+            {/* Círculo + label */}
+            <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`rounded-full flex items-center justify-center transition-all ${
-                  done
-                    ? "bg-primary"
-                    : active
-                    ? "bg-primary"
-                    : "bg-surface-container-high"
-                }`}
-                style={{ width: "36px", height: "36px" }}
+                className={cn(
+                  "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200",
+                  done || active ? "bg-primary" : "bg-surface-container-high"
+                )}
               >
                 {done ? (
-                  <span className="material-symbols-outlined text-white" style={{ fontSize: "18px" }}>
-                    check
-                  </span>
+                  <Check className="w-4 h-4 text-white" strokeWidth={2.5} />
                 ) : (
-                  <span
-                    className={`font-bold text-sm ${active ? "text-white" : "text-on-surface-variant"}`}
-                  >
+                  <span className={cn("text-sm font-bold", active ? "text-white" : "text-on-surface-variant")}>
                     {step.number}
                   </span>
                 )}
               </div>
-              <span
-                className={`text-xs font-semibold ${active ? "text-primary" : "text-on-surface-variant"}`}
-              >
+              <span className={cn("text-xs font-semibold", active ? "text-primary" : "text-on-surface-variant")}>
                 {step.label}
               </span>
             </div>
 
-            {index < STEPS.length - 1 && (
+            {/* Conector */}
+            {!last && (
               <div
-                className={`transition-all ${done ? "bg-primary" : "bg-surface-container-high"}`}
-                style={{ height: "2px", flex: 1, margin: "0 8px", marginBottom: "20px" }}
+                className={cn(
+                  "flex-1 h-0.5 mx-2 mb-5 rounded-full transition-all duration-300",
+                  done ? "bg-primary" : "bg-surface-container-high"
+                )}
               />
             )}
           </div>

@@ -1,8 +1,6 @@
-// ─────────────────────────────────────────────────────────────
-// utils/analyzeNSFW.ts
 // Analisa uma imagem com nsfwjs e retorna resultado tipado.
 // O modelo deve ser passado como argumento (gerenciado pelo hook).
-// ─────────────────────────────────────────────────────────────
+
 
 import type { NSFWResult } from "../types/imageValidation";
 
@@ -20,7 +18,7 @@ export interface NSFWModel {
   ): Promise<NSFWPrediction[]>;
 }
 
-// ─── Thresholds de decisão ────────────────────────────────────
+//Thresholds de decisão
 
 /** Bloqueia envio imediatamente */
 export const NSFW_BLOCK_THRESHOLDS = {
@@ -35,7 +33,7 @@ export const NSFW_WARN_THRESHOLDS = {
   Sexy: 0.4,
 } as const;
 
-// ─── Análise ──────────────────────────────────────────────────
+//Análise
 
 /**
  * Roda a classificação NSFW no canvas fornecido.
