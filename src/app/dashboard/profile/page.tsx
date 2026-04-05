@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { api } from "@/lib/api";
-import { Save, School } from "lucide-react";
+import { ArrowLeft, CheckCircle, LoaderCircle, Save, School, User } from "lucide-react";
 
 const SHIFT_OPTIONS = [
   { value: "Manhã", label: "Manhã" },
@@ -80,9 +80,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-surface">
-        <span className="material-symbols-outlined text-primary text-5xl animate-spin">
-          progress_activity
-        </span>
+        <LoaderCircle className="text-primary animate-spin" size={44} />
       </div>
     );
   }
@@ -95,7 +93,7 @@ export default function ProfilePage() {
           onClick={() => router.back()}
           className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
         >
-          <span className="material-symbols-outlined text-on-surface">arrow_back</span>
+          <ArrowLeft className="text-on-surface" size={20} />
         </button>
         <h1 className="font-headline font-bold text-on-surface text-lg flex-1">Meu Perfil</h1>
         <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
@@ -105,7 +103,7 @@ export default function ProfilePage() {
         {/* Info do usuário */}
         <div className="bg-primary rounded-2xl p-5 mb-6 flex items-center gap-4">
           <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-full flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white text-3xl">person</span>
+            <User className="text-white" size={28} />
           </div>
           <div>
             <p className="text-white font-bold text-base leading-tight">{formData.name}</p>
@@ -116,7 +114,7 @@ export default function ProfilePage() {
         {/* Feedback */}
         {success && (
           <div className="bg-success-container border border-success-border text-on-success text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">check_circle</span>
+            <CheckCircle size={16} />
             Perfil atualizado com sucesso!
           </div>
         )}
