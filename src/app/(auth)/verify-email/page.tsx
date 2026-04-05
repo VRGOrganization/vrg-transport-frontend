@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { BadgeCheck, Pin } from "lucide-react";
 
 function VerifyEmailForm() {
   const router = useRouter();
@@ -57,7 +58,7 @@ function VerifyEmailForm() {
         <Input
           label="Código de verificação"
           type="text"
-          icon="pin"
+          icon={Pin}
           placeholder="000000"
           value={code}
           onChange={(e) => {
@@ -73,7 +74,7 @@ function VerifyEmailForm() {
           size="lg"
           fullWidth
           loading={loading}
-          icon="verified"
+          icon={BadgeCheck}
         >
           Verificar e-mail
         </Button>

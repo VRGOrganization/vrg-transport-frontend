@@ -11,7 +11,6 @@ export interface Step1Data {
   degree: string;
   shift: string;
   bloodType: string;
-  bus: string;
 }
 
 interface Step1InfoFormProps {

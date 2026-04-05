@@ -129,6 +129,11 @@ export default function DocumentUpload({
   const isPdf = entry?.file?.type === "application/pdf";
   const isProcessing = status === "processing";
   const Icon = config.icon;
+  const uploadLabel = config.acceptPdf
+    ? "Selecionar Imagem ou PDF"
+    : config.validateRatio
+      ? "Selecionar Foto 3x4"
+      : "Selecionar Imagem";
 
   const cardBorder = cn(
     "rounded-xl border transition-all duration-200 overflow-hidden",
@@ -223,7 +228,7 @@ export default function DocumentUpload({
               ? <FilePlus className="w-4 h-4" />
               : <ImagePlus className="w-4 h-4" />
             }
-            {config.acceptPdf ? "Selecionar Imagem ou PDF" : "Selecionar Foto 3x4"}
+            {uploadLabel}
           </button>
         </div>
       )}

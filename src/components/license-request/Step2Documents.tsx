@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import DocumentUpload from "./DocumentUpload";
@@ -94,6 +94,7 @@ function ProgressBar({
 // ─── Componente principal ────────────────────────────────────
 
 export default function Step2Documents({
+  entries,
   onChange,
   onBack,
   onContinue,
@@ -103,6 +104,25 @@ export default function Step2Documents({
 
   const { entries: processorEntries, isProcessing, allValid, setFile, removeEntry } =
     useImageProcessor(model, LICENSE_DOCUMENTS.length);
+
+  const restoredRef = useRef(false);
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+
+    let hasRestoredFile = false;
+    for (const [index, doc] of LICENSE_DOCUMENTS.entries()) {
+      const restoredEntry = entries[doc.photoType];
+      if (!restoredEntry?.file) continue;
+
+      setFile(index, restoredEntry.file, doc.validateRatio);
+      hasRestoredFile = true;
+    }
+
+    if (hasRestoredFile) {
+      restoredRef.current = true;
+    }
+  }, [entries, setFile]);
 
   // Sincroniza entradas para o pai
   useEffect(() => {

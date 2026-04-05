@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { api } from "@/lib/api";
+import { Save, School } from "lucide-react";
 
 const SHIFT_OPTIONS = [
   { value: "Manhã", label: "Manhã" },
@@ -25,7 +26,6 @@ interface StudentProfile {
   degree: string;
   shift: string;
   bloodType: string;
-  bus: string;
 }
 
 export default function ProfilePage() {
@@ -41,7 +41,6 @@ export default function ProfilePage() {
     degree: "",
     shift: "",
     bloodType: "",
-    bus: "",
   });
 
   useEffect(() => {
@@ -53,7 +52,6 @@ export default function ProfilePage() {
         degree: data.degree ?? "",
         shift: data.shift ?? "",
         bloodType: data.bloodType ?? "",
-        bus: data.bus ?? "",
       }))
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
@@ -69,7 +67,6 @@ export default function ProfilePage() {
         degree: formData.degree,
         shift: formData.shift,
         bloodType: formData.bloodType,
-        bus: formData.bus,
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -107,7 +104,7 @@ export default function ProfilePage() {
       <main className="pt-20 pb-10 px-5 max-w-lg mx-auto">
         {/* Info do usuário */}
         <div className="bg-primary rounded-2xl p-5 mb-6 flex items-center gap-4">
-          <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-full flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-white text-3xl">person</span>
           </div>
           <div>
@@ -137,7 +134,7 @@ export default function ProfilePage() {
           <Input
             label="Curso"
             type="text"
-            icon="school"
+            icon={School}
             placeholder="Ex: Engenharia de Software"
             value={formData.degree}
             onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
@@ -195,7 +192,7 @@ export default function ProfilePage() {
             size="lg"
             fullWidth
             loading={saving}
-            icon="save"
+            icon={Save}
           >
             Salvar Alterações
           </Button>

@@ -7,7 +7,7 @@ import { Send, TriangleAlert } from "lucide-react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DayPeriod {
-  day: string; // "SEG" | "TER" | "QUA" | "QUI" | "SEX" | "SAB"
+  day: string; // "SEG" | "TER" | "QUA" | "QUI" | "SEX"
   period: string; // "Manhã" | "Tarde" | "Noite"
 }
 
@@ -32,7 +32,6 @@ const DAYS = [
   { short: "QUA", full: "Quarta-feira", dayOfWeek: 3 },
   { short: "QUI", full: "Quinta-feira", dayOfWeek: 4 },
   { short: "SEX", full: "Sexta-feira", dayOfWeek: 5 },
-  { short: "SAB", full: "Sábado", dayOfWeek: 6 },
 ];
 
 const PERIODS = [
