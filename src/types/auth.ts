@@ -1,36 +1,48 @@
-export type UserRole = "student" | "servant" | "admin";
-
-export interface User {
+// ─────────────────────────────────────────────────────────────
+// types/auth.ts
+// Tipos alinhados com o contrato da API refatorada (NestJS).
+// O refresh_token NUNCA aparece aqui — vai direto para cookie HTTP-only.
+// ─────────────────────────────────────────────────────────────
+ 
+export type UserRole = "STUDENT" | "EMPLOYEE" | "ADMIN";
+ 
+/** Usuário autenticado conforme retornado pelo backend */
+export interface AuthUser {
   id: string;
-  name: string;
-  email: string;
   role: UserRole;
-  registrationNumber: string;
-  createdAt: Date;
-  updatedAt: Date;
+  identifier: string;
+  name: string; // nome do student
 }
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  role: UserRole;
-  remember?: boolean;
+ 
+/** Resposta de login, verify e refresh */
+export interface LoginResponse {
+  access_token: string;
+  user: AuthUser;
 }
-
-export interface RegisterData extends LoginCredentials {
-  name: string;
-  confirmPassword: string;
-  registrationNumber: string;
+ 
+/** Resposta de register */
+export interface RegisterResponse {
+  message: string;
+  isInstitutional: boolean;
 }
-
-export interface AuthResponse {
-  user: User;
-  token: string;
-  refreshToken?: string;
+ 
+/** Resposta de logout e resend-code */
+export interface MessageResponse {
+  message: string;
 }
-
+ 
+/** Erro tipado lançado pelo apiClient */
 export interface ApiError {
   message: string;
-  code: string;
   status: number;
+}
+ 
+/** Type guard para ApiError */
+export function isApiError(err: unknown): err is ApiError {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    "status" in err
+  );
 }

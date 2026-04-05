@@ -12,20 +12,23 @@ import { DASHBOARD_ACTIONS } from "@/constants/dashboard-actions";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [user, loading, router]);
+    if (!isLoading && !isAuthenticated) router.push("/login");
+  }, [isAuthenticated, isLoading, router]);
 
-  if (loading || !user) return null;
+  if (isLoading || !user) return null;
+
+  // identifier é o email do student
+  const displayName = user.name;
 
   return (
     <>
       <DashboardHeader onLogout={logout} />
 
       <main className="flex flex-col flex-1 pt-24 pb-8 px-6 max-w-lg mx-auto w-full">
-        <DashboardGreeting name={user.name} />
+        <DashboardGreeting name={displayName} />
 
         <nav className="flex flex-col gap-4 flex-1">
           <LicenseActionCard />

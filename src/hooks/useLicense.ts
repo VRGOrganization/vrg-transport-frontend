@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
-import { License } from "@/types/license";
+import { apiClient } from "@/lib/apiClient";
+import type { License } from "@/types/license";
 
 interface UseLicenseResult {
   license: License | null;
@@ -15,18 +15,11 @@ export function useLicense(): UseLicenseResult {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLicense = async () => {
-      try {
-        const data = await api.get<License>("/license/me");
-        setLicense(data);
-      } catch {
-        setLicense(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLicense();
+    apiClient
+      .get<License>("/license/me")
+      .then(setLicense)
+      .catch(() => setLicense(null))
+      .finally(() => setLoading(false));
   }, []);
 
   return { license, loading, hasLicense: license !== null };
