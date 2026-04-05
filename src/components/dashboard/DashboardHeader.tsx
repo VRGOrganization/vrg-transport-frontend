@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LogOut, Menu } from "lucide-react";
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -9,45 +10,41 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ onLogout }: DashboardHeaderProps) {
   return (
     <header
-      className="fixed top-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md shadow-sm"
+      className="fixed top-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md border-b border-outline-variant/30"
       style={{
-        height: "64px",
+        height: "60px",
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        paddingLeft: "24px",
-        paddingRight: "24px",
+        paddingInline: "16px",
       }}
     >
+      {/* Esquerda — menu */}
       <button
-        className="text-primary hover:bg-surface-container-low rounded-full transition-colors active:scale-95"
+        className="text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors active:scale-95 flex-shrink-0"
         style={{ padding: "8px" }}
       >
-        <span className="material-symbols-outlined">menu</span>
+        <Menu size={20} />
       </button>
 
+      {/* Centro — título */}
       <h1
-        className="font-headline font-bold text-primary tracking-tight"
-        style={{ fontSize: "18px" }}
+        className="font-headline font-bold text-on-surface flex-1 text-center tracking-tight"
+        style={{ fontSize: "16px" }}
       >
         Transporte São Fidélis
       </h1>
 
-      <div className="flex items-center gap-1">
+      {/* Direita — tema + sair (só ícones) */}
+      <div className="flex items-center gap-1 shrink-0">
         <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
         <button
-        onClick={onLogout}
-        className="flex items-center gap-2 text-primary hover:bg-surface-container-low rounded-full px-3 py-2 transition-colors active:scale-95"
-        title="Sair"
+          onClick={onLogout}
+          title="Sair"
+          className="text-on-surface-variant hover:text-error hover:bg-surface-container-low rounded-full transition-colors active:scale-95"
+          style={{ padding: "8px" }}
         >
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: "20px" }}
-        >
-          logout
-        </span>
-        <span className="text-sm font-medium">Sair</span>
-      </button>
+          <LogOut size={20} />
+        </button>
       </div>
     </header>
   );

@@ -1,17 +1,33 @@
-// app/request-license/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+
 import { api } from "@/lib/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import StepIndicator from "@/components/license-request/StepIndicator";
-import Step1InfoForm, { Step1Data } from "@/components/license-request/Step1InfoForm";
-import Step2Documents, { DocumentFiles } from "@/components/license-request/Step2Documents";
+import Step1InfoForm, {
+  Step1Data,
+} from "@/components/license-request/Step1InfoForm";
+import Step3Grade, {
+  Step3Data,
+} from "@/components/license-request/Step3grade";
+
 import { LICENSE_DOCUMENTS } from "@/constants/license-documents";
-import Step3Grade, { Step3Data } from "@/components/license-request/Step3grade";
+import {
+  getWithTTL,
+  ONE_DAY_MS,
+  removeWithTTL,
+  setWithTTL,
+} from "@/lib/storageWithTTL";
+
+// ✅ IMPORT SOMENTE DE TIPO (não entra no bundle)
+import type { DocumentEntries } from "@/components/license-request/Step2Documents";
 
 const STORAGE_KEY = "license_request_step1";
+const STORAGE_KEY_STEP2 = "license_request_step2";
 const STORAGE_KEY_STEP3 = "license_request_step3";
 
 const EMPTY_STEP1: Step1Data = {
@@ -19,126 +35,212 @@ const EMPTY_STEP1: Step1Data = {
   degree: "",
   shift: "",
   bloodType: "",
-  bus: "",
 };
 
 const EMPTY_STEP3: Step3Data = {
   selections: [],
 };
 
-function fileToBase64(file: File): Promise<string> {
+interface PersistedDocumentEntry {
+  name: string;
+  type: string;
+  dataUrl: string;
+}
+
+type PersistedStep2 = Record<string, PersistedDocumentEntry | null>;
+
+// ✅ LAZY LOAD REAL (resolve o problema do TensorFlow)
+const Step2Documents = dynamic(
+  () => import("@/components/license-request/Step2Documents"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4 animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className="h-20 rounded-xl bg-surface-container-low border border-outline-variant/30"
+          />
+        ))}
+      </div>
+    ),
+  }
+);
+
+function makeEmptyEntries(): DocumentEntries {
+  return Object.fromEntries(
+    LICENSE_DOCUMENTS.map((d) => [d.photoType, null])
+  );
+}
+
+function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
     reader.readAsDataURL(file);
   });
 }
 
+async function serializeDocumentEntries(
+  entries: DocumentEntries
+): Promise<PersistedStep2> {
+  const serialized: PersistedStep2 = {};
+
+  for (const doc of LICENSE_DOCUMENTS) {
+    const entry = entries[doc.photoType];
+    const source = entry?.file ?? null;
+
+    if (!source) {
+      serialized[doc.photoType] = null;
+      continue;
+    }
+
+    const dataUrl = await fileToDataUrl(source);
+    serialized[doc.photoType] = {
+      name: source.name,
+      type: source.type,
+      dataUrl,
+    };
+  }
+
+  return serialized;
+}
+
+function dataUrlToFile(dataUrl: string, fileName: string, type: string): File {
+  const commaIndex = dataUrl.indexOf(",");
+  const base64 = commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new File([bytes], fileName, { type });
+}
+
+function deserializeDocumentEntries(data: PersistedStep2): DocumentEntries {
+  const hydrated = makeEmptyEntries();
+
+  for (const doc of LICENSE_DOCUMENTS) {
+    const persisted = data[doc.photoType];
+    if (!persisted) continue;
+
+    const file = dataUrlToFile(persisted.dataUrl, persisted.name, persisted.type);
+    hydrated[doc.photoType] = {
+      file,
+      previewUrl: file.type.startsWith("image/") ? persisted.dataUrl : "",
+      result: null,
+    };
+  }
+
+  return hydrated;
+}
+
 export default function RequestLicensePage() {
   const router = useRouter();
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [step1, setStep1] = useState<Step1Data>(EMPTY_STEP1);
   const [step3, setStep3] = useState<Step3Data>(EMPTY_STEP3);
-  const [files, setFiles] = useState<DocumentFiles>(
-    Object.fromEntries(LICENSE_DOCUMENTS.map((d) => [d.photoType, null]))
-  );
+  const [documentEntries, setDocumentEntries] =
+    useState<DocumentEntries>(makeEmptyEntries());
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const savedStep1 = localStorage.getItem(STORAGE_KEY);
-    if (savedStep1) {
-      try {
-        setStep1(JSON.parse(savedStep1));
-      } catch {
-        // ignora JSON inválido
-      }
-    }
-    
-    const savedStep3 = localStorage.getItem(STORAGE_KEY_STEP3);
-    if (savedStep3) {
-      try {
-        setStep3(JSON.parse(savedStep3));
-      } catch {
-        // ignora JSON inválido
-      }
+    const savedStep1 = getWithTTL<Step1Data>(STORAGE_KEY, ONE_DAY_MS);
+    if (savedStep1) setStep1(savedStep1);
+
+    const savedStep3 = getWithTTL<Step3Data>(STORAGE_KEY_STEP3, ONE_DAY_MS);
+    if (savedStep3) setStep3(savedStep3);
+
+    const savedStep2 = getWithTTL<PersistedStep2>(STORAGE_KEY_STEP2, ONE_DAY_MS);
+    if (savedStep2) {
+      setDocumentEntries(deserializeDocumentEntries(savedStep2));
     }
   }, []);
 
-  // Função chamada quando clica em "Continuar" no Step1
   const handleContinueFromStep1 = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(step1));
+    setWithTTL(STORAGE_KEY, step1);
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Função chamada quando clica em "Voltar" no Step2
   const handleBackFromStep2 = () => {
     setStep(1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Função chamada quando clica em "Continuar para Grade Horária" no Step2
-  const handleContinueFromStep2 = () => {
-    // Salva os dados do step1 (opcional, mas mantém consistência)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(step1));
-    // Avança para o step 3
+  const handleContinueFromStep2 = async () => {
+    setWithTTL(STORAGE_KEY, step1);
+
+    const serialized = await serializeDocumentEntries(documentEntries);
+    setWithTTL(STORAGE_KEY_STEP2, serialized);
+
     setStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Função chamada quando clica em "Voltar" no Step3
   const handleBackFromStep3 = () => {
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Função que faz a requisição final ao backend (chamada no Step3)
   const handleFinalSubmit = async () => {
     setSubmitting(true);
     setError("");
 
     try {
-      // Salva o step3 no localStorage antes de enviar
-      localStorage.setItem(STORAGE_KEY_STEP3, JSON.stringify(step3));
+      setWithTTL(STORAGE_KEY_STEP3, step3);
 
-      // 1. Envia dados do passo 1 (informações pessoais/acadêmicas)
-      await api.patch("/student/me", {
-        institution: step1.institution,
-        degree: step1.degree,
-        shift: step1.shift,
-        bloodType: step1.bloodType,
-        bus: step1.bus,
-      });
+      const formData = new FormData();
 
-      // 2. Envia os documentos
+      const appendIfFilled = (key: string, value: string) => {
+        const normalized = value.trim();
+        if (normalized.length > 0) {
+          formData.append(key, normalized);
+        }
+      };
+
+      appendIfFilled("institution", step1.institution);
+      appendIfFilled("degree", step1.degree);
+      appendIfFilled("shift", step1.shift);
+      appendIfFilled("bloodType", step1.bloodType);
+      formData.append("schedule", JSON.stringify(step3.selections));
+
       for (const doc of LICENSE_DOCUMENTS) {
-        const file = files[doc.photoType];
-        if (!file) continue;
+        const entry = documentEntries[doc.photoType];
+        const blob = entry?.result?.processedBlob ?? entry?.file;
+        if (!blob) continue;
 
-        const base64 = await fileToBase64(file);
-        await api.post("/image/me", {
-          photoType: doc.photoType,
-          photo3x4: base64,
-        });
+        const fallbackName = blob.type === "image/jpeg"
+          ? `${doc.photoType}.jpg`
+          : `${doc.photoType}.pdf`;
+
+        const uploadFileName = blob.type === "image/jpeg"
+          ? (entry?.file?.name?.replace(/\.[^.]+$/, "") || doc.photoType) + ".jpg"
+          : entry?.file?.name ?? fallbackName;
+
+        formData.append(
+          doc.photoType,
+          blob,
+          uploadFileName
+        );
       }
 
-      // 3. Envia os dados do passo 3 (horários selecionados)
-      await api.post("/student/schedule", {
-        selections: step3.selections,
-      });
+      await api.postForm("/student/me/license-submit", formData);
 
-      // Limpa os dados salvos
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(STORAGE_KEY_STEP3);
-      
-      // Redireciona para o dashboard com flag de sucesso
+      removeWithTTL(STORAGE_KEY);
+      removeWithTTL(STORAGE_KEY_STEP2);
+      removeWithTTL(STORAGE_KEY_STEP3);
+
       router.push("/dashboard?requested=true");
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message ?? "Erro ao enviar pedido. Tente novamente.");
-      // Se houver erro, volta para o topo da página
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSubmitting(false);
@@ -152,11 +254,13 @@ export default function RequestLicensePage() {
           onClick={() => router.back()}
           className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
         >
-          <span className="material-symbols-outlined text-on-surface">arrow_back</span>
+          <ArrowLeft size={20} className="text-on-surface" />
         </button>
+
         <h1 className="font-headline font-bold text-on-surface text-lg flex-1">
           Solicitar Carteirinha
         </h1>
+
         <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
       </header>
 
@@ -165,7 +269,7 @@ export default function RequestLicensePage() {
 
         {error && (
           <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">error</span>
+            <AlertCircle size={16} />
             {error}
           </div>
         )}
@@ -180,13 +284,13 @@ export default function RequestLicensePage() {
 
         {step === 2 && (
           <Step2Documents
-            files={files}
-            onChange={setFiles}
+            entries={documentEntries}
+            onChange={setDocumentEntries}
             onBack={handleBackFromStep2}
             onContinue={handleContinueFromStep2}
           />
         )}
-        
+
         {step === 3 && (
           <Step3Grade
             data={step3}

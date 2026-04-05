@@ -1,292 +1,193 @@
 "use client";
 
+import { useEffect, useCallback, useRef } from "react";
+import { ArrowLeft, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import DocumentUpload from "./DocumentUpload";
 import { LICENSE_DOCUMENTS } from "@/constants/license-documents";
-import { useState, useEffect, useMemo } from "react";
+import { useNSFW } from "@/hooks/useNSFW";
+import { useImageProcessor } from "@/hooks/useImageProcessor";
+import { cn } from "@/lib/utils";
+import type { ImageEntry } from "@/hooks/useImageProcessor";
 
-export type DocumentFiles = Record<string, File | null>;
+// ─── Tipos públicos ───────────────────────────────────────────
+
+export type DocumentEntries = Record<string, ImageEntry | null>;
 
 interface Step2DocumentsProps {
-  files: DocumentFiles;
-  onChange: (files: DocumentFiles) => void;
+  entries: DocumentEntries;
+  onChange: (entries: DocumentEntries) => void;
   onBack: () => void;
   onContinue: () => void;
 }
 
-// Componente de preview individual
-function DocumentPreview({
-  file,
-  onRemove,
-  docName,
-}: {
-  file: File;
-  onRemove: () => void;
-  docName: string;
-}) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isImage, setIsImage] = useState(false);
+// ─── Banner do modelo NSFW ────────────────────────────────────
 
-  useEffect(() => {
-    if (file.type.startsWith("image/")) {
-      setIsImage(true);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setIsImage(false);
-      setPreviewUrl(null);
-    }
-  }, [file]);
+function ModelBanner({ status, onRetry }: { status: string; onRetry: () => void }) {
+  if (status === "ready") return null;
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
-
-  return (
-    <div className="relative group">
-      <div className="bg-surface-container rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-all">
-        <div className="relative aspect-video bg-surface-container-high flex items-center justify-center">
-          {isImage && previewUrl ? (
-            <img
-              src={previewUrl}
-              alt={`Preview ${docName}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="text-center">
-              <p className="text-on-surface-variant text-sm capitalize">
-                {file.type.split("/").pop() || "documento"}
-              </p>
-            </div>
-          )}
-
-          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded px-2 py-1">
-            <span className="text-white text-xs font-medium uppercase">
-              {file.type.split("/").pop()?.split(".").pop() || "arquivo"}
-            </span>
-          </div>
-
-          <button
-            onClick={onRemove}
-            className="absolute top-2 right-2 bg-error rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-            aria-label="Remover documento"
-          >
-            <span className="material-symbols-outlined text-white text-sm">
-              close
-            </span>
-          </button>
-        </div>
-
-        <div className="p-3 bg-surface-container">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-sm font-medium text-on-surface truncate"
-                title={file.name}
-              >
-                {file.name}
-              </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {formatFileSize(file.size)}
-              </p>
-            </div>
-            <div className="shrink-0">
-              <span className="inline-flex items-center gap-1 text-xs text-success">
-                <span className="material-symbols-outlined text-sm">
-                  check_circle
-                </span>
-                Enviado
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente de preview em grid
-function DocumentsGrid({
-  files,
-  onRemoveFile,
-}: {
-  files: DocumentFiles;
-  onRemoveFile: (docType: string) => void;
-}) {
-  const uploadedDocs = Object.entries(files).filter(([, file]) => !!file);
-
-  if (uploadedDocs.length === 0) {
+  if (status === "loading" || status === "idle") {
     return (
-      <div className="text-center py-12 bg-surface-container-low rounded-lg border border-dashed border-outline-variant">
-        <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-2">
-          cloud_upload
-        </span>
-        <p className="text-on-surface-variant">
-          Nenhum documento enviado ainda
-        </p>
-        <p className="text-on-surface-variant text-sm mt-1">
-          Utilize os campos acima para fazer upload
-        </p>
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-info-container text-on-info text-sm">
+        <ShieldCheck className="w-4 h-4 shrink-0 animate-pulse" />
+        <span>Carregando verificação de conteúdo...</span>
       </div>
     );
   }
 
+  if (status === "error") {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-warning-container text-on-warning text-sm">
+        <ShieldAlert className="w-4 h-4 shrink-0" />
+        <span className="flex-1">Verificação de conteúdo indisponível.</span>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="flex items-center gap-1 text-xs font-bold underline hover:no-underline shrink-0"
+        >
+          <RefreshCw className="w-3 h-3" />
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ─── Barra de progresso ───────────────────────────────────────
+
+function ProgressBar({
+  okCount,
+  total,
+  isProcessing,
+}: {
+  okCount: number;
+  total: number;
+  isProcessing: boolean;
+}) {
+  const pct = total === 0 ? 0 : Math.round((okCount / total) * 100);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-      {uploadedDocs.map(([docType, file]) => {
-        const docConfig = LICENSE_DOCUMENTS.find(
-          (d) => d.photoType === docType,
-        );
-        return (
-          <DocumentPreview
-            key={docType}
-            file={file!}
-            docName={docConfig?.label || docType}
-            onRemove={() => onRemoveFile(docType)}
-          />
-        );
-      })}
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs text-on-surface-variant">
+        <span>
+          {okCount} de {total} documento{total !== 1 ? "s" : ""} verificado{okCount !== 1 ? "s" : ""}
+        </span>
+        {isProcessing && (
+          <span className="text-primary font-medium animate-pulse">Verificando...</span>
+        )}
+      </div>
+      <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            okCount === total && total > 0 ? "bg-success" : "bg-primary"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
 
+// ─── Componente principal ────────────────────────────────────
+
 export default function Step2Documents({
-  files,
+  entries,
   onChange,
   onBack,
   onContinue,
 }: Step2DocumentsProps) {
-    const [showPreview, setShowPreview] = useState(true);
+  const nsfw = useNSFW();
+  const model = nsfw.status === "ready" ? nsfw.model : null;
 
-  const setFile = (photoType: string, file: File | null) => {
-    onChange({ ...files, [photoType]: file });
-  };
+  const { entries: processorEntries, isProcessing, allValid, setFile, removeEntry } =
+    useImageProcessor(model, LICENSE_DOCUMENTS.length);
 
-  const removeFile = (docType: string) => {
-    const newFiles = { ...files, [docType]: null };
-    onChange(newFiles);
-  };
+  const restoredRef = useRef(false);
 
-  const { requiredFilled, requiredFilledCount, missingRequired, totalUploaded, totalRequired } = useMemo(() => {
-    const requiredDocuments = LICENSE_DOCUMENTS.filter((d) => d.required);
+  useEffect(() => {
+    if (restoredRef.current) return;
 
-    const requiredFilledCount = requiredDocuments.filter(
-      (d) => Boolean(files[d.photoType])
-    ).length;
+    let hasRestoredFile = false;
+    for (const [index, doc] of LICENSE_DOCUMENTS.entries()) {
+      const restoredEntry = entries[doc.photoType];
+      if (!restoredEntry?.file) continue;
 
-    const requiredFilled = requiredFilledCount === requiredDocuments.length;
-    const missingRequired = requiredDocuments.length - requiredFilledCount;
-    const totalUploaded = Object.values(files).filter(Boolean).length;
-    const totalRequired = requiredDocuments.length;
+      setFile(index, restoredEntry.file, doc.validateRatio);
+      hasRestoredFile = true;
+    }
 
-    return { requiredFilled, requiredFilledCount, missingRequired, totalUploaded, totalRequired };
-  }, [files]);
+    if (hasRestoredFile) {
+      restoredRef.current = true;
+    }
+  }, [entries, setFile]);
 
-  const getButtonText = () => {
-    if (requiredFilled) return 'Continuar para Grade Horária';  // Mudado o texto
-    if (missingRequired === 1) return `Falta 1 documento obrigatório`;
-    return `Faltam ${missingRequired} documentos obrigatórios`;
-  };
+  // Sincroniza entradas para o pai
+  useEffect(() => {
+    const mapped: DocumentEntries = Object.fromEntries(
+      LICENSE_DOCUMENTS.map((doc, i) => [doc.photoType, processorEntries[i] ?? null])
+    );
+    onChange(mapped);
+  }, [processorEntries, onChange]);
+
+  const handleFileSelect = useCallback(
+    (index: number, file: File, validateRatio: boolean) => {
+      setFile(index, file, validateRatio);
+    },
+    [setFile]
+  );
+
+  const okCount = processorEntries.filter((e) => e?.result?.status === "ok").length;
+  const total = LICENSE_DOCUMENTS.length;
 
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho com progresso */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-on-surface">
-            Documentos necessários
-          </h3>
-          <p className="text-sm text-on-surface-variant mt-1">
-            {requiredFilledCount} de {totalRequired} documentos obrigatórios enviados
-          </p>
-        </div>
-        
-        {totalUploaded > 0 && (
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-primary text-sm font-medium hover:underline"
-          >
-            {showPreview ? 'Ocultar preview' : 'Mostrar preview'}
-          </button>
-        )}
-      </div>
-      
+    <div className="space-y-5">
+      {/* Banner do modelo */}
+      <ModelBanner status={nsfw.status} onRetry={nsfw.retry} />
+
       {/* Barra de progresso */}
-      <div className="space-y-2">
-        <div className="h-2 bg-surface-container-high rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(requiredFilledCount / totalRequired) * 100}%` }}
-          />
-        </div>
-      </div>
-      
-      {/* Uploads individuais */}
-      <div className="space-y-4">
-        {LICENSE_DOCUMENTS.map((doc) => (
+      <ProgressBar okCount={okCount} total={total} isProcessing={isProcessing} />
+
+      {/* Lista de documentos */}
+      <div className="space-y-3">
+        {LICENSE_DOCUMENTS.map((doc, index) => (
           <DocumentUpload
             key={doc.photoType}
             config={doc}
-            file={files[doc.photoType] ?? null}
-            onChange={(file) => setFile(doc.photoType, file)}
+            entry={processorEntries[index] ?? null}
+            onFileSelect={(file) => handleFileSelect(index, file, doc.validateRatio)}
+            onRemove={() => removeEntry(index)}
+            disabled={isProcessing}
           />
         ))}
       </div>
 
-      {/* Grid de preview */}
-      {showPreview && (
-        <DocumentsGrid files={files} onRemoveFile={removeFile} />
-      )}
+      {/* Ações */}
+      <div className="flex gap-3 pt-4 border-t border-outline-variant">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={isProcessing}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-on-surface-variant hover:bg-surface-container rounded-lg transition-all disabled:opacity-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
+        </button>
 
-      {/* Legenda e ações */}
-      <div className="space-y-4 pt-4 border-t border-outline-variant">
-        <div className="flex items-center gap-4 text-xs text-on-surface-variant">
-          <div className="flex items-center gap-1">
-            <span className="text-error font-bold">*</span>
-            <span>Campos obrigatórios</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">check_circle</span>
-            <span>Documento enviado</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-primary rounded-full"></div>
-            <span>Progresso</span>
-          </div>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1 text-on-surface-variant font-semibold text-sm active:scale-95 transition-all px-4 py-2 rounded-lg hover:bg-surface-container-high"
-          >
-            <span className="material-symbols-outlined text-lg">
-              arrow_back
-            </span>
-            Voltar
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={!requiredFilled}  // Removido submitting
-              icon="arrow_forward"  // Mudado de "send" para "arrow_forward"
-              onClick={onContinue}  // Mudado de onSubmit para onContinue
-              className="whitespace-normal break-words"
-            >
-              <span className="inline-block">
-                {getButtonText()}
-              </span>
-            </Button>
-          </div>
-        </div>
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={!allValid || isProcessing}
+          onClick={onContinue}
+        >
+          {allValid
+            ? "Continuar"
+            : isProcessing
+            ? "Verificando..."
+            : `Aguardando documentos (${okCount}/${total})`}
+        </Button>
       </div>
     </div>
   );

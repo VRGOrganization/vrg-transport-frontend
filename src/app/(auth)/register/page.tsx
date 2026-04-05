@@ -3,7 +3,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function RegisterPage() {
   return (
-    <main className="flex-grow flex items-center justify-center p-4 md:p-8 bg-mesh">
+    <main className="grow flex items-center justify-center p-4 md:p-8 bg-mesh">
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low bg-surface-container-lowest/80 backdrop-blur-sm rounded-full" />
       </div>

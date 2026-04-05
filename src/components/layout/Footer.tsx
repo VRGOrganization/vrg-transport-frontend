@@ -1,12 +1,16 @@
+import { Landmark } from "lucide-react";
+
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="w-full py-8 px-8 bg-surface-container-low">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        
+        {/* Lado Esquerdo */}
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 opacity-60 grayscale hover:grayscale-0 transition-all">
-            <span className="material-symbols-outlined text-3xl text-primary">
-              account_balance
-            </span>
+            <Landmark className="text-primary w-full h-full" />
           </div>
           <div>
             <p className="font-headline font-bold text-primary text-sm">
@@ -17,6 +21,8 @@ export function Footer() {
             </p>
           </div>
         </div>
+
+        {/* Centro */}
         <div className="flex gap-8">
           <a href="#" className="font-label text-xs text-on-surface-variant hover:text-primary transition-colors">
             Ouvidoria
@@ -28,8 +34,20 @@ export function Footer() {
             Ajuda
           </a>
         </div>
+
+        {/* Lado Direito */}
         <p className="font-label text-[10px] text-outline">
-          © 2026 Prefeitura de São Fidélis. Todos os direitos reservados.
+          © {currentYear} Prefeitura de São Fidélis.
+        </p>
+      </div>
+
+      
+      <div className="max-w-7xl mx-auto mt-2 pt-4">
+        <p className="font-label text-[10px] text-outline text-center">
+
+          <a href="https://vrg.com.br" target="_blank" rel="noopener noreferrer">
+            Criado por <span className="font-bold text-on-surface-variant">VRG</span>
+          </a>
         </p>
       </div>
     </footer>

@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { CreditCard, Hourglass, QrCode } from "lucide-react";
 import { useLicense } from "@/hooks/useLicense";
 import { License } from "@/types/license";
 
@@ -68,9 +69,7 @@ function LicenseStatusCardInner() {
             </p>
           </div>
           <div className="bg-surface-container-high rounded-full" style={{ padding: "10px" }}>
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: "24px", display: "block" }}>
-              hourglass_empty
-            </span>
+            <Hourglass className="text-primary" size={24} />
           </div>
         </div>
       );
@@ -97,9 +96,7 @@ function LicenseStatusCardInner() {
           </p>
         </div>
         <div className="bg-black/10 rounded-full" style={{ padding: "10px" }}>
-          <span className="material-symbols-outlined text-white" style={{ fontSize: "24px", display: "block" }}>
-            add_card
-          </span>
+          <CreditCard className="text-white" size={24} />
         </div>
       </Link>
     );
@@ -140,9 +137,7 @@ function LicenseStatusCardInner() {
         </p>
       </div>
       <div className="bg-surface-container-lowest/10 rounded-full" style={{ padding: "10px", position: "relative", zIndex: 10 }}>
-        <span className="material-symbols-outlined text-white" style={{ fontSize: "24px", display: "block" }}>
-          qr_code_2
-        </span>
+        <QrCode className="text-white" size={24} />
       </div>
     </Link>
   );
